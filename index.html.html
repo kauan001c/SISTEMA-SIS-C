@@ -1,0 +1,4542 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIS-C v2.0 - Sistema de Contabilidade Automatizada</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary: #0066cc;
+            --primary-dark: #0052a3;
+            --primary-light: #e6f2ff;
+            --secondary: #00a86b;
+            --secondary-dark: #008c5a;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --success: #28a745;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border: #dee2e6;
+            --border-radius: 8px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* LAYOUT CONTAINER */
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background-color: white;
+            border-right: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .logo-section {
+            padding: 0 24px 32px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            background-color: var(--primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .logo-text span {
+            font-size: 0.85rem;
+            color: var(--gray);
+            font-weight: 400;
+        }
+
+        .nav-section {
+            padding: 0 24px;
+            flex-grow: 1;
+        }
+
+        .nav-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            color: var(--dark);
+            text-decoration: none;
+            margin-bottom: 8px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-footer {
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .user-details h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .user-details p {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-title h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .page-title p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* CARDS */
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .card-subtitle {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            color: var(--dark);
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--light);
+            border-color: var(--gray);
+        }
+
+        .btn-lg {
+            padding: 14px 28px;
+            font-size: 1.05rem;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* INPUTS */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        select.input-field {
+            cursor: pointer;
+        }
+
+        /* UPLOAD AREA */
+        .upload-area {
+            border: 2px dashed var(--primary);
+            border-radius: var(--border-radius);
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background-color: var(--primary-light);
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            background-color: #d6eaff;
+            border-color: var(--primary-dark);
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .upload-formats {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .format-badge {
+            background-color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* FILE STRUCTURE CONFIG */
+        .structure-config {
+            background-color: var(--light);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .structure-row {
+            display: grid;
+            grid-template-columns: 200px 1fr 100px;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: white;
+            border-radius: var(--border-radius);
+        }
+
+        /* RULES SECTION */
+        .rules-container {
+            background-color: var(--light);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .rule-item {
+            display: grid;
+            grid-template-columns: 1fr 150px 150px 200px auto;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            align-items: center;
+        }
+
+        .rule-keyword {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+        }
+
+        .rule-type {
+            padding: 10px 12px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border);
+            background-color: white;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .rule-account {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+        }
+
+        /* FINANCIAL SUMMARY */
+        .financial-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .financial-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .financial-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .summary-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            border-top: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .summary-card.entradas {
+            border-top-color: var(--success);
+        }
+
+        .summary-card.saidas {
+            border-top-color: var(--danger);
+        }
+
+        .summary-card.saldo {
+            border-top-color: var(--secondary);
+        }
+
+        .summary-title {
+            font-size: 0.95rem;
+            color: var(--gray);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .summary-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .summary-value.positive {
+            color: var(--success);
+        }
+
+        .summary-value.negative {
+            color: var(--danger);
+        }
+
+        .summary-value.neutral {
+            color: var(--primary);
+        }
+
+        .summary-desc {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* TRANSACTIONS TABLE */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            min-width: 1000px;
+        }
+
+        .transactions-table thead {
+            background-color: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .transactions-table th {
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .transactions-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .transactions-table tbody tr {
+            transition: var(--transition);
+        }
+
+        .transactions-table tbody tr:hover {
+            background-color: var(--primary-light);
+        }
+
+        .transactions-table tbody tr:nth-child(even) {
+            background-color: var(--light);
+        }
+
+        .transactions-table tbody tr:nth-child(even):hover {
+            background-color: var(--primary-light);
+        }
+
+        /* STATUS MESSAGES */
+        .status-message {
+            padding: 16px 20px;
+            border-radius: var(--border-radius);
+            margin-top: 20px;
+            font-weight: 500;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid var(--danger);
+        }
+
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid var(--info);
+        }
+
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid var(--warning);
+        }
+
+        /* LOADING */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 16px;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .close-modal {
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ANIMATIONS */
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                width: 280px;
+                height: 100vh;
+                z-index: 1001;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .page-title h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 12px;
+            }
+            
+            .card {
+                padding: 16px;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .card-title {
+                font-size: 1.1rem;
+            }
+            
+            .upload-area {
+                padding: 40px 16px;
+            }
+            
+            .upload-icon {
+                font-size: 2.5rem;
+            }
+            
+            .upload-text {
+                font-size: 1rem;
+            }
+            
+            .rule-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .rule-item > * {
+                width: 100%;
+            }
+            
+            .structure-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .financial-summary {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .summary-card {
+                padding: 16px;
+            }
+            
+            .summary-value {
+                font-size: 1.5rem;
+            }
+            
+            .transactions-table {
+                font-size: 0.85rem;
+            }
+            
+            .transactions-table th,
+            .transactions-table td {
+                padding: 8px 6px;
+            }
+            
+            .btn {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+            
+            .btn-lg {
+                padding: 12px 24px;
+                font-size: 1rem;
+            }
+            
+            .d-flex.gap-10 {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .d-flex.justify-between {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .d-grid[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .d-grid[style*="grid-template-columns: repeat(auto-fill"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title h2 {
+                font-size: 1.3rem;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .modal-title {
+                font-size: 1.3rem;
+            }
+            
+            .summary-card {
+                padding: 12px;
+            }
+            
+            .summary-value {
+                font-size: 1.3rem;
+            }
+            
+            .upload-area {
+                padding: 30px 12px;
+            }
+            
+            .upload-icon {
+                font-size: 2rem;
+            }
+            
+            .upload-text {
+                font-size: 0.9rem;
+            }
+            
+            .transactions-table {
+                min-width: 600px;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .tab {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* MOBILE MENU */
+        .mobile-menu-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: var(--border-radius);
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .mobile-menu-btn {
+                display: flex !important;
+            }
+        }
+
+        /* OVERLAY FOR MOBILE SIDEBAR */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* UTILITY */
+        .text-center { text-align: center; }
+        .mt-20 { margin-top: 20px; }
+        .mt-30 { margin-top: 30px; }
+        .mb-20 { margin-bottom: 20px; }
+        .mb-30 { margin-bottom: 30px; }
+        .d-none { display: none; }
+        .d-flex { display: flex; }
+        .d-grid { display: grid; }
+        .flex-column { flex-direction: column; }
+        .align-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-10 { gap: 10px; }
+        .gap-15 { gap: 15px; }
+        .gap-20 { gap: 20px; }
+        .w-100 { width: 100%; }
+        
+        /* ACCOUNT CODE STYLES */
+        .account-code {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+        
+        .account-debit {
+            color: var(--danger);
+        }
+        
+        .account-credit {
+            color: var(--success);
+        }
+        
+        /* NOVO ESTILO PARA AS REGRAS DE COMPLEMENTO */
+        .complement-rule {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .complement-rule-input {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            width: 100%;
+        }
+        
+        .complement-prefix {
+            font-weight: 600;
+            color: var(--primary);
+            margin-right: 5px;
+        }
+        
+        /* EDIT IN PLACE */
+        .editable {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        
+        .editable:hover {
+            background-color: var(--primary-light);
+        }
+        
+        /* BATCH EDITING */
+        .batch-edit-panel {
+            background-color: var(--warning);
+            color: var(--dark);
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .selected-count {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        /* BADGE */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        
+        .badge-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .badge-warning {
+            background-color: var(--warning);
+            color: var(--dark);
+        }
+        
+        .badge-info {
+            background-color: var(--info);
+            color: white;
+        }
+        
+        .badge-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>SIS-C v2.0</h1>
+                        <span>Contabilidade Automatizada</span>
+                    </div>
+                </div>
+            </div>
+            
+<nav class="nav-section">
+    <div class="nav-title">MENU PRINCIPAL</div>
+    <a class="nav-item active" data-section="import">
+        <i class="fas fa-file-import"></i>
+        <span>Importar Extrato</span>
+    </a>
+    <a class="nav-item" data-section="rules">
+        <i class="fas fa-sliders-h"></i>
+        <span>Regras de Lançamento</span>
+    </a>
+    <a class="nav-item" data-section="summary">
+        <i class="fas fa-chart-line"></i>
+        <span>Resumo Financeiro</span>
+    </a>
+    <a class="nav-item" data-section="transactions">
+        <i class="fas fa-list-alt"></i>
+        <span>Transações</span>
+        <span id="transactionsBadge" class="badge badge-primary d-none">0</span>
+    </a>
+    
+    <div class="nav-title mt-30">CONFIGURAÇÕES</div>
+    <a class="nav-item" data-section="settings">
+        <i class="fas fa-cog"></i>
+        <span>Configurações</span>
+    </a>
+    <a class="nav-item" onclick="showHelpModal()">
+        <i class="fas fa-question-circle"></i>
+        <span>Ajuda e Suporte</span>
+    </a>
+    <a class="nav-item" data-section="chart">
+        <i class="fas fa-th-list"></i>
+        <span>Plano de Contas</span>
+    </a>
+    <a class="nav-item" onclick="showFileStructureModal()">
+        <i class="fas fa-table"></i>
+        <span>Estrutura de Arquivos</span>
+    </a>
+    
+<a class="nav-item" href="AGUARDE.HTML" target="_blank">
+    <i class="fas fa-chart-pie"></i>
+    <span>Demonstrativos</span>
+</a>
+
+<a class="nav-item" href="AGUARDE.HTML" target="_blank">
+    <i class="fas fa-cogs"></i>
+    <span>Sistema (2)</span>
+</a>
+
+</nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">FK</div>
+                    <div class="user-details">
+                        <h4>Francisco Kauan</h4>
+                        <p>Desenvolvedor</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- OVERLAY FOR MOBILE -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileMenu()"></div>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <div class="content-header">
+                <div class="page-title">
+                    <h2 id="pageTitle">Importar Extrato</h2>
+                    <p id="pageSubtitle">Carregue seu extrato bancário para processamento automático</p>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <button class="btn btn-outline" onclick="exportToExcel()" id="exportExcelBtn" disabled>
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                    <button class="btn btn-outline" onclick="exportToTxt()" id="exportTxtBtn" disabled>
+                        <i class="fas fa-file-alt"></i> TXT
+                    </button>
+                    <button class="btn btn-warning" onclick="applyRulesToTransactions()" id="applyRulesBtn" disabled>
+                        <i class="fas fa-magic"></i> Aplicar Regras
+                    </button>
+                </div>
+            </div>
+
+            <!-- IMPORT SECTION -->
+            <section class="content-section" id="importSection">
+                <div class="tabs" id="importTabs">
+                    <button class="tab active" onclick="switchImportTab('ofx')">OFX/QFX</button>
+                    <button class="tab" onclick="switchImportTab('csv')">CSV</button>
+                    <button class="tab" onclick="switchImportTab('excel')">Excel</button>
+                </div>
+                
+                <!-- OFX TAB -->
+                <div class="tab-content active" id="ofxTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">
+                                    <i class="fas fa-file-upload"></i> Importar Arquivo OFX/QFX
+                                </div>
+                                <div class="card-subtitle">Selecione seu arquivo OFX ou QFX para processamento</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upload-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">Arraste e solte seu arquivo OFX/QFX aqui</div>
+                            <div class="upload-subtext">ou clique para selecionar do computador</div>
+                            <div class="upload-formats">
+                                <span class="format-badge">.ofx</span>
+                                <span class="format-badge">.qfx</span>
+                            </div>
+                            <input type="file" id="fileInput" accept=".ofx,.qfx">
+                        </div>
+                        
+                        <div class="text-center mb-20">
+                            <div id="fileName" class="text-center mb-20" style="color: var(--gray);">
+                                Nenhum arquivo selecionado
+                            </div>
+                            <button class="btn btn-primary btn-lg" onclick="processFile('ofx')" id="processBtn">
+                                <i class="fas fa-cogs"></i> Processar Extrato
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CSV TAB -->
+                <div class="tab-content" id="csvTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">
+                                    <i class="fas fa-file-csv"></i> Importar Arquivo CSV
+                                </div>
+                                <div class="card-subtitle">Selecione seu arquivo CSV com transações bancárias</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upload-area" id="csvDropArea" onclick="document.getElementById('csvFileInput').click()">
+                            <div class="upload-icon">
+                                <i class="fas fa-file-csv"></i>
+                            </div>
+                            <div class="upload-text">Arraste e solte seu arquivo CSV aqui</div>
+                            <div class="upload-subtext">ou clique para selecionar do computador</div>
+                            <div class="upload-formats">
+                                <span class="format-badge">.csv</span>
+                                <span class="format-badge">.txt</span>
+                            </div>
+                            <input type="file" id="csvFileInput" accept=".csv,.txt">
+                        </div>
+                        
+                        <div class="structure-config">
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-columns"></i> Separador de Colunas
+                                </label>
+                                <select id="csvSeparator" class="input-field">
+                                    <option value=";">Ponto e vírgula (;)</option>
+                                    <option value=",">Vírgula (,)</option>
+                                    <option value="\t">Tabulação</option>
+                                    <option value="|">Pipe (|)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-file-alt"></i> O arquivo tem cabeçalho?
+                                </label>
+                                <select id="csvHasHeader" class="input-field">
+                                    <option value="true">Sim, a primeira linha é cabeçalho</option>
+                                    <option value="false">Não, começa com dados</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-20">
+                            <div id="csvFileName" class="text-center mb-20" style="color: var(--gray);">
+                                Nenhum arquivo selecionado
+                            </div>
+                            <button class="btn btn-primary btn-lg" onclick="processFile('csv')" id="processCsvBtn">
+                                <i class="fas fa-cogs"></i> Processar CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- EXCEL TAB -->
+                <div class="tab-content" id="excelTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">
+                                    <i class="fas fa-file-excel"></i> Importar Arquivo Excel
+                                </div>
+                                <div class="card-subtitle">Selecione seu arquivo Excel com transações bancárias</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upload-area" id="excelDropArea" onclick="document.getElementById('excelFileInput').click()">
+                            <div class="upload-icon">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <div class="upload-text">Arraste e solte seu arquivo Excel aqui</div>
+                            <div class="upload-subtext">ou clique para selecionar do computador</div>
+                            <div class="upload-formats">
+                                <span class="format-badge">.xlsx</span>
+                                <span class="format-badge">.xls</span>
+                            </div>
+                            <input type="file" id="excelFileInput" accept=".xlsx,.xls">
+                        </div>
+                        
+                        <div class="structure-config">
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-table"></i> Nome da Planilha
+                                </label>
+                                <input type="text" id="excelSheetName" class="input-field" placeholder="Deixe em branco para a primeira planilha" value="">
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-20">
+                            <div id="excelFileName" class="text-center mb-20" style="color: var(--gray);">
+                                Nenhum arquivo selecionado
+                            </div>
+                            <button class="btn btn-primary btn-lg" onclick="processFile('excel')" id="processExcelBtn">
+                                <i class="fas fa-cogs"></i> Processar Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-cog"></i> Configurações Básicas
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="input-group">
+                            <label class="input-label">
+                                <i class="fas fa-university"></i> Código da Conta Bancária
+                            </label>
+                            <input type="text" id="bankAccountCode" class="input-field" placeholder="Ex: 1.1.1.001" value="1.1.1.001">
+                            <div style="font-size: 0.85rem; color: var(--gray); margin-top: 5px;">
+                                Este código será usado nas operações bancárias
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                <i class="fas fa-history"></i> Histórico Padrão
+                            </label>
+                            <input type="text" id="defaultHistory" class="input-field" placeholder="Ex: Movimentação Bancária" value="Movimentação Bancária">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">
+                            <i class="fas fa-calculator"></i> Saldo Anterior
+                        </label>
+                        <input type="number" id="previousBalance" class="input-field" placeholder="0.00" step="0.01" value="0.00">
+                    </div>
+                </div>
+            </section>
+
+            <!-- RULES SECTION -->
+            <section class="content-section d-none" id="rulesSection">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">
+                                <i class="fas fa-sliders-h"></i> Regras de Lançamento Contábil
+                            </div>
+                            <div class="card-subtitle">Configure regras para categorização automática das transações</div>
+                        </div>
+                        <button class="btn btn-success" onclick="addRule()">
+                            <i class="fas fa-plus"></i> Nova Regra
+                        </button>
+                    </div>
+                    
+                    <div class="rules-container" id="rulesContainer">
+                        <!-- Regras serão carregadas dinamicamente aqui -->
+                    </div>
+                    
+                    <div class="mt-20">
+                        <div style="background-color: var(--primary-light); padding: 15px; border-radius: var(--border-radius); border-left: 4px solid var(--primary);">
+                            <div style="font-weight: 600; color: var(--primary); margin-bottom: 8px;">
+                                <i class="fas fa-info-circle"></i> Fluxo Contábil das Regras
+                            </div>
+                            <div style="font-size: 0.9rem; color: var(--dark);">
+                                <strong>Para entrada (valor positivo):</strong> Débito na conta informada na regra | Crédito na conta bancária<br>
+                                <strong>Para saída (valor negativo):</strong> Crédito na conta informada na regra | Débito na conta bancária
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-lightbulb"></i> Exemplos de Regras
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--primary);">SALÁRIO</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Tipo: Crédito (Entrada)</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Conta: 3.1.1.001 (Receita de Salários)</div>
+                            <div style="font-size: 0.8rem; color: var(--success); margin-top: 5px;">
+                                Débito: 3.1.1.001 | Crédito: Conta Bancária
+                            </div>
+                        </div>
+                        
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--primary);">SUPERMERCADO</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Tipo: Débito (Saída)</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Conta: 4.1.1.001 (Despesas Alimentação)</div>
+                            <div style="font-size: 0.8rem; color: var(--danger); margin-top: 5px;">
+                                Débito: Conta Bancária | Crédito: 4.1.1.001
+                            </div>
+                        </div>
+                        
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--primary);">ALUGUEL</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Tipo: Débito (Saída)</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Conta: 4.1.2.001 (Despesas Aluguel)</div>
+                            <div style="font-size: 0.8rem; color: var(--danger); margin-top: 5px;">
+                                Débito: Conta Bancária | Crédito: 4.1.2.001
+                            </div>
+                        </div>
+                        
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--primary);">VENDA</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Tipo: Crédito (Entrada)</div>
+                            <div style="font-size: 0.85rem; color: var(--gray);">Conta: 3.1.2.001 (Receita de Vendas)</div>
+                            <div style="font-size: 0.8rem; color: var(--success); margin-top: 5px;">
+                                Débito: 3.1.2.001 | Crédito: Conta Bancária
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SUMMARY SECTION -->
+            <section class="content-section d-none" id="summarySection">
+                <div class="financial-summary">
+                    <div class="summary-card">
+                        <div class="summary-title">Saldo Anterior</div>
+                        <div class="summary-value neutral" id="summaryPreviousBalance">R$ 0,00</div>
+                        <div class="summary-desc">Saldo inicial informado</div>
+                    </div>
+                    
+                    <div class="summary-card entradas">
+                        <div class="summary-title">Total de Entradas</div>
+                        <div class="summary-value positive" id="summaryTotalCredits">R$ 0,00</div>
+                        <div class="summary-desc">Valor creditado na conta</div>
+                    </div>
+                    
+                    <div class="summary-card saidas">
+                        <div class="summary-title">Total de Saídas</div>
+                        <div class="summary-value negative" id="summaryTotalDebits">R$ 0,00</div>
+                        <div class="summary-desc">Valor debitado da conta</div>
+                    </div>
+                    
+                    <div class="summary-card saldo">
+                        <div class="summary-title">Saldo Final</div>
+                        <div class="summary-value neutral" id="summaryFinalBalance">R$ 0,00</div>
+                        <div class="summary-desc">Saldo após movimentações</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-calculator"></i> Cálculo do Saldo
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 20px; background-color: var(--light); border-radius: var(--border-radius);">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;">
+                            <div style="font-size: 1.5rem; font-weight: 700;">(Saldo Anterior + Entradas) - Saídas = Saldo Final</div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center;">
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.2rem; font-weight: 600;">Saldo Anterior</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="calcPreviousBalance">R$ 0,00</div>
+                            </div>
+                            
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--gray);">+</div>
+                            
+                            <div>
+                                <div style="font-size: 1.2rem; font-weight: 600;">Entradas</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);" id="calcCredits">R$ 0,00</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin-top: 20px;">
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.2rem; font-weight: 600;">Resultado</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="calcSubtotal">R$ 0,00</div>
+                            </div>
+                            
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--gray);">-</div>
+                            
+                            <div>
+                                <div style="font-size: 1.2rem; font-weight: 600;">Saídas</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);" id="calcDebits">R$ 0,00</div>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--border);">
+                            <div style="font-size: 1.2rem; font-weight: 600;">Saldo Final</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--secondary);" id="calcFinalBalance">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TRANSACTIONS SECTION -->
+            <section class="content-section d-none" id="transactionsSection">
+                <!-- BATCH EDITING PANEL -->
+                <div class="batch-edit-panel" id="batchEditPanel">
+                    <div>
+                        <span class="selected-count" id="selectedCount">0</span> transações selecionadas
+                    </div>
+                    <div class="d-flex gap-10">
+                        <button class="btn btn-sm btn-outline" onclick="deselectAllTransactions()">
+                            <i class="fas fa-times"></i> Desmarcar
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="showBatchEditModal()">
+                            <i class="fas fa-edit"></i> Editar em Lote
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSelectedTransactions()">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- FERRAMENTAS DE COMPLEMENTO -->
+                <div class="card mb-20">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-edit"></i> Ferramentas de Complemento
+                        </div>
+                    </div>
+                    <div class="d-flex gap-10 flex-wrap">
+                        <button class="btn btn-info" onclick="applyAutoComplement()">
+                            <i class="fas fa-robot"></i> Aplicar Complemento Automático
+                        </button>
+                        <button class="btn btn-warning" onclick="showComplementModal()">
+                            <i class="fas fa-exchange-alt"></i> Mudar Complemento por Palavra-chave
+                        </button>
+                        <button class="btn btn-primary" onclick="showDebitCreditComplementModal()">
+                            <i class="fas fa-search"></i> Complemento por Débito/Crédito
+                        </button>
+                        <button class="btn btn-success" onclick="showAdvancedFilterModal()">
+                            <i class="fas fa-filter"></i> Filtro Avançado
+                        </button>
+                    </div>
+                    <div class="mt-20">
+                        <div style="background-color: #e7f3ff; padding: 12px; border-radius: var(--border-radius); border-left: 4px solid var(--info);">
+                            <div style="font-weight: 600; color: var(--info); margin-bottom: 5px;">
+                                <i class="fas fa-info-circle"></i> Funcionalidades de Complemento
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--dark);">
+                                <strong>Auto Complemento:</strong> Aplica prefixos automaticamente (RECEBIMENTO DE - / PGTO A -)<br>
+                                <strong>Mudar por Palavra-chave:</strong> Substitui textos nos complementos<br>
+                                <strong>Complemento por Débito/Crédito:</strong> Altera complemento baseado no código contábil<br>
+                                <strong>Filtro Avançado:</strong> Filtre transações por múltiplos critérios
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">
+                                <i class="fas fa-list-alt"></i> Transações Processadas
+                            </div>
+                            <div class="card-subtitle">Extrato bancário organizado com lançamentos contábeis</div>
+                        </div>
+                        <div class="d-flex align-center gap-10">
+                            <span id="transactionCount">0</span> transações
+                            <button class="btn btn-sm btn-outline" onclick="selectAllTransactions()">
+                                <i class="fas fa-check-square"></i> Selecionar Todas
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- BARRA DE PESQUISA E FILTRO -->
+                    <div class="d-flex gap-10 mb-20" style="padding: 16px; background-color: var(--light); border-radius: var(--border-radius);">
+                        <div class="input-group" style="flex: 1;">
+                            <label class="input-label">
+                                <i class="fas fa-search"></i> Filtrar por palavra no complemento
+                            </label>
+                            <input type="text" id="transactionSearch" class="input-field" placeholder="Digite uma palavra para filtrar (ex: PIX ENVIADO)" onkeyup="filterTransactions()">
+                        </div>
+                        <div class="d-flex align-center gap-10">
+                            <button class="btn btn-secondary" onclick="clearTransactionFilter()">
+                                <i class="fas fa-times"></i> Limpar Filtro
+                            </button>
+                            <button class="btn btn-success" onclick="showBulkComplementModal()" id="bulkComplementBtn" disabled>
+                                <i class="fas fa-edit"></i> Mudar Complemento dos Filtrados
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="loading" id="loading">
+                        <i class="fas fa-spinner"></i>
+                        <div class="loading-text">Processando arquivo...</div>
+                    </div>
+                    
+                    <div class="table-container" id="transactionsContainer">
+                        <table class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)">
+                                    </th>
+                                    <th>Data</th>
+                                    <th>Débito</th>
+                                    <th>Crédito</th>
+                                    <th>Valor</th>
+                                    <th>Histórico</th>
+                                    <th>Documento</th>
+                                    <th>Complemento</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center" style="padding: 40px;">
+                                        <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; color: var(--border); margin-bottom: 15px;"></i>
+                                        <div style="font-size: 1.1rem; color: var(--gray);">
+                                            Nenhuma transação processada. Importe um arquivo para começar.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="status-message" id="statusMessage"></div>
+                    
+                    <div class="d-flex justify-between mt-30">
+                        <button class="btn btn-outline" onclick="clearAll()">
+                            <i class="fas fa-broom"></i> Limpar Tudo
+                        </button>
+                        
+                        <div class="d-flex gap-10">
+                            <button class="btn btn-success" id="exportExcelBtn2" onclick="exportToExcel()" disabled>
+                                <i class="fas fa-file-excel"></i> Exportar para Excel
+                            </button>
+                            <button class="btn btn-primary" id="exportTxtBtn2" onclick="exportToTxt()" disabled>
+                                <i class="fas fa-file-alt"></i> Exportar para TXT
+                            </button>
+                            <button class="btn btn-warning" onclick="applyRulesToTransactions()" id="applyRulesBtn2" disabled>
+                                <i class="fas fa-magic"></i> Aplicar Regras
+                            </button>
+                            <button class="btn btn-info" onclick="showReportModal()">
+                                <i class="fas fa-chart-bar"></i> Relatório
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SETTINGS SECTION -->
+            <section class="content-section d-none" id="settingsSection">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-cog"></i> Configurações do Sistema
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid" style="grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <h3 style="margin-bottom: 20px; color: var(--primary);">Preferências</h3>
+                            
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-sort-numeric-up"></i> Formato de Números
+                                </label>
+                                <select id="numberFormat" class="input-field">
+                                    <option value="pt-BR">Português (Brasil)</option>
+                                    <option value="en-US">Inglês (Estados Unidos)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-calendar"></i> Formato de Data
+                                </label>
+                                <select id="dateFormat" class="input-field">
+                                    <option value="dd/MM/yyyy">DD/MM/AAAA</option>
+                                    <option value="MM/dd/yyyy">MM/DD/AAAA</option>
+                                    <option value="yyyy-MM-dd">AAAA-MM-DD</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-file-download"></i> Formato de Exportação Padrão
+                                </label>
+                                <select id="exportFormat" class="input-field">
+                                    <option value="excel">Excel (.xlsx)</option>
+                                    <option value="txt">Texto (.txt)</option>
+                                    <option value="both">Ambos</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">
+                                    <i class="fas fa-save"></i> Auto-save
+                                </label>
+                                <select id="autoSave" class="input-field">
+                                    <option value="enabled">Ativado (salva a cada 30 segundos)</option>
+                                    <option value="disabled">Desativado</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 style="margin-bottom: 20px; color: var(--primary);">Sobre o Sistema</h3>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-weight: 600; margin-bottom: 5px;">SIS-C v2.0</div>
+                                <div style="color: var(--gray); font-size: 0.9rem;">Sistema de Contabilidade Automatizada</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-weight: 600; margin-bottom: 5px;">Desenvolvedor</div>
+                                <div style="color: var(--gray); font-size: 0.9rem;">Francisco Kauan</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-weight: 600; margin-bottom: 5px;">Contato</div>
+                                <div style="color: var(--gray); font-size: 0.9rem;">fcokauan01@gmail.com</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-weight: 600; margin-bottom: 5px;">Licença</div>
+                                <div style="color: var(--gray); font-size: 0.9rem;">Uso exclusivo</div>
+                            </div>
+                            
+                            <div style="margin-top: 30px;">
+                                <button class="btn btn-primary w-100" onclick="saveSettings()">
+                                    <i class="fas fa-save"></i> Salvar Configurações
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHART SECTION -->
+            <section class="content-section d-none" id="chartSection">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-th-list"></i> Plano de Contas
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-between align-center mb-20">
+                        <h3 style="margin-bottom: 0; color: var(--primary); font-size: 1.2rem;">Gerencie seu plano de contas</h3>
+                        <div class="d-flex gap-10">
+                            <button class="btn btn-primary" onclick="importChartOfAccounts()">
+                                <i class="fas fa-file-import"></i> Importar
+                            </button>
+                            <button class="btn btn-success" onclick="addAccount()">
+                                <i class="fas fa-plus"></i> Nova Conta
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Grupo</th>
+                                    <th>Tipo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chartTableBody">
+                                <!-- Contas serão carregadas dinamicamente aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="status-message" id="chartStatusMessage"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL PARA ESTRUTURA DE ARQUIVOS -->
+    <div class="modal" id="fileStructureModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-table"></i> Configurar Estrutura de Arquivos
+                </div>
+                <div class="close-modal" onclick="closeFileStructureModal()">&times;</div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchStructureTab('csv')">CSV</button>
+                <button class="tab" onclick="switchStructureTab('excel')">Excel</button>
+            </div>
+            
+            <!-- ESTRUTURA CSV -->
+            <div class="tab-content active" id="csvStructureTab">
+                <div class="input-group">
+                    <label class="input-label">Nome da Configuração</label>
+                    <input type="text" id="csvConfigName" class="input-field" placeholder="Ex: Banco XYZ - CSV">
+                </div>
+                
+                <div class="structure-config">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">Mapeamento de Colunas</h4>
+                    
+                    <div class="structure-row">
+                        <div style="font-weight: 600;">Campo</div>
+                        <div style="font-weight: 600;">Coluna no CSV</div>
+                        <div style="font-weight: 600;">Formato</div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Data</div>
+                        <div>
+                            <input type="text" id="csvDateColumn" class="input-field" placeholder="Ex: A ou 0" value="A">
+                        </div>
+                        <div>
+                            <select id="csvDateFormat" class="input-field">
+                                <option value="dd/MM/yyyy">DD/MM/AAAA</option>
+                                <option value="MM/dd/yyyy">MM/DD/AAAA</option>
+                                <option value="yyyy-MM-dd">AAAA-MM-DD</option>
+                                <option value="dd-MM-yyyy">DD-MM-AAAA</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Descrição</div>
+                        <div>
+                            <input type="text" id="csvDescColumn" class="input-field" placeholder="Ex: B ou 1" value="B">
+                        </div>
+                        <div></div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Valor</div>
+                        <div>
+                            <input type="text" id="csvValueColumn" class="input-field" placeholder="Ex: C ou 2" value="C">
+                        </div>
+                        <div>
+                            <select id="csvValueFormat" class="input-field">
+                                <option value="decimal_comma">Decimal com vírgula (1.234,56)</option>
+                                <option value="decimal_dot">Decimal com ponto (1,234.56)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Tipo (Entrada/Saída)</div>
+                        <div>
+                            <input type="text" id="csvTypeColumn" class="input-field" placeholder="Ex: D ou 3 (opcional)">
+                        </div>
+                        <div>
+                            <select id="csvTypeFormat" class="input-field">
+                                <option value="positive_negative">Positivo/Negativo</option>
+                                <option value="credit_debit">Crédito/Débito</option>
+                                <option value="in_out">Entrada/Saída</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Linha Inicial dos Dados</label>
+                    <input type="number" id="csvStartRow" class="input-field" placeholder="Ex: 1 (para cabeçalho na linha 0)" value="1">
+                </div>
+            </div>
+            
+            <!-- ESTRUTURA EXCEL -->
+            <div class="tab-content" id="excelStructureTab">
+                <div class="input-group">
+                    <label class="input-label">Nome da Configuração</label>
+                    <input type="text" id="excelConfigName" class="input-field" placeholder="Ex: Banco XYZ - Excel">
+                </div>
+                
+                <div class="structure-config">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">Mapeamento de Colunas</h4>
+                    
+                    <div class="structure-row">
+                        <div style="font-weight: 600;">Campo</div>
+                        <div style="font-weight: 600;">Coluna no Excel</div>
+                        <div style="font-weight: 600;">Formato</div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Data</div>
+                        <div>
+                            <input type="text" id="excelDateColumn" class="input-field" placeholder="Ex: A" value="A">
+                        </div>
+                        <div>
+                            <select id="excelDateFormat" class="input-field">
+                                <option value="dd/MM/yyyy">DD/MM/AAAA</option>
+                                <option value="MM/dd/yyyy">MM/DD/AAAA</option>
+                                <option value="yyyy-MM-dd">AAAA-MM-DD</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Descrição</div>
+                        <div>
+                            <input type="text" id="excelDescColumn" class="input-field" placeholder="Ex: B" value="B">
+                        </div>
+                        <div></div>
+                    </div>
+                    
+                    <div class="structure-row">
+                        <div>Valor</div>
+                        <div>
+                            <input type="text" id="excelValueColumn" class="input-field" placeholder="Ex: C" value="C">
+                        </div>
+                        <div>
+                            <select id="excelValueFormat" class="input-field">
+                                <option value="decimal_comma">Decimal com vírgula (1.234,56)</option>
+                                <option value="decimal_dot">Decimal com ponto (1,234.56)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeFileStructureModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="saveFileStructure()">
+                    <i class="fas fa-save"></i> Salvar Configuração
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-question-circle"></i> Ajuda e Suporte
+                </div>
+                <div class="close-modal" onclick="closeHelpModal()">&times;</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Seu Nome</label>
+                <input type="text" id="helpName" class="input-field" placeholder="Digite seu nome">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Assunto</label>
+                <input type="text" id="helpSubject" class="input-field" placeholder="Assunto da mensagem">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Mensagem</label>
+                <textarea id="helpMessage" class="input-field" rows="5" placeholder="Descreva sua dúvida ou problema"></textarea>
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeHelpModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="sendHelpRequest()">
+                    <i class="fas fa-paper-plane"></i> Enviar para Suporte
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA MUDANÇA DE COMPLEMENTO -->
+    <div class="modal" id="complementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-exchange-alt"></i> Mudar Complemento por Palavra-chave
+                </div>
+                <div class="close-modal" onclick="closeComplementModal()">&times;</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Palavra-chave para buscar</label>
+                <input type="text" id="searchKeyword" class="input-field" placeholder="Ex: SUPERMERCADO, ALUGUEL">
+                <div style="font-size: 0.85rem; color: var(--gray); margin-top: 5px;">
+                    Digite a palavra que aparece nos complementos que deseja alterar
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Novo complemento ou texto para adicionar</label>
+                <input type="text" id="newComplement" class="input-field" placeholder="Ex: COMPRAS MENSAL, PAGAMENTO DE">
+                <div style="font-size: 0.85rem; color: var(--gray); margin-top: 5px;">
+                    Se quiser apenas adicionar texto no início, use: [TEXTO] + espaço
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Tipo de substituição</label>
+                <select id="replaceType" class="input-field">
+                    <option value="replace">Substituir palavra inteira</option>
+                    <option value="add_beginning">Adicionar no início</option>
+                    <option value="add_end">Adicionar no final</option>
+                </select>
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeComplementModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="applyComplementChange()">
+                    <i class="fas fa-check"></i> Aplicar Alteração
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA COMPLEMENTO POR DÉBITO/CRÉDITO -->
+    <div class="modal" id="debitCreditComplementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-search"></i> Complemento por Código Débito/Crédito
+                </div>
+                <div class="close-modal" onclick="closeDebitCreditComplementModal()">&times;</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Código Débito/Crédito para buscar</label>
+                <input type="text" id="searchCode" class="input-field" placeholder="Ex: 4.1.1.001 ou 565">
+                <div style="font-size: 0.85rem; color: var(--gray); margin-top: 5px;">
+                    Digite o código contábil que deseja buscar (deixa em branco para qualquer)
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Tipo de código</label>
+                <select id="codeType" class="input-field">
+                    <option value="both">Buscar em Débito e Crédito</option>
+                    <option value="debit">Apenas Débito</option>
+                    <option value="credit">Apenas Crédito</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Novo complemento</label>
+                <input type="text" id="newComplementCode" class="input-field" placeholder="Ex: DESPESA ALIMENTAÇÃO, TARIFA BANCÁRIA">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Ação</label>
+                                <select id="complementAction" class="input-field">
+                    <option value="replace">Substituir complemento</option>
+                    <option value="add_beginning">Adicionar no início</option>
+                    <option value="add_end">Adicionar no final</option>
+                </select>
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeDebitCreditComplementModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="applyDebitCreditComplementChange()">
+                    <i class="fas fa-check"></i> Aplicar Alteração
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA EDIÇÃO EM LOTE -->
+    <div class="modal" id="batchEditModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-edit"></i> Editar Transações em Lote
+                </div>
+                <div class="close-modal" onclick="closeBatchEditModal()">&times;</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Campo para editar</label>
+                <select id="batchEditField" class="input-field">
+                    <option value="debit">Código Débito</option>
+                    <option value="credit">Código Crédito</option>
+                    <option value="history">Histórico</option>
+                    <option value="complement">Complemento</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Novo valor</label>
+                <input type="text" id="batchEditValue" class="input-field" placeholder="Digite o novo valor">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Ação</label>
+                <select id="batchEditAction" class="input-field">
+                    <option value="replace">Substituir</option>
+                    <option value="add_prefix">Adicionar prefixo</option>
+                    <option value="add_suffix">Adicionar sufixo</option>
+                </select>
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeBatchEditModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="applyBatchEdit()">
+                    <i class="fas fa-check"></i> Aplicar Edição
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA FILTRO AVANÇADO -->
+    <div class="modal" id="advancedFilterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-filter"></i> Filtro Avançado
+                </div>
+                <div class="close-modal" onclick="closeAdvancedFilterModal()">&times;</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Palavra no complemento</label>
+                <input type="text" id="filterComplement" class="input-field" placeholder="Ex: PIX, TRANSFERÊNCIA">
+            </div>
+            
+            <div class="d-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label class="input-label">Data inicial</label>
+                    <input type="date" id="filterDateFrom" class="input-field">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Data final</label>
+                    <input type="date" id="filterDateTo" class="input-field">
+                </div>
+            </div>
+            
+            <div class="d-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label class="input-label">Valor mínimo</label>
+                    <input type="number" id="filterValueMin" class="input-field" placeholder="0.00" step="0.01">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Valor máximo</label>
+                    <input type="number" id="filterValueMax" class="input-field" placeholder="0.00" step="0.01">
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Tipo de transação</label>
+                <select id="filterType" class="input-field">
+                    <option value="all">Todas</option>
+                    <option value="credit">Entradas (Crédito)</option>
+                    <option value="debit">Saídas (Débito)</option>
+                </select>
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeAdvancedFilterModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="applyAdvancedFilter()">
+                    <i class="fas fa-filter"></i> Aplicar Filtro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RELATÓRIO -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-chart-bar"></i> Relatório Financeiro
+                </div>
+                <div class="close-modal" onclick="closeReportModal()">&times;</div>
+            </div>
+            
+            <div id="reportContent">
+                <!-- Conteúdo do relatório será gerado aqui -->
+            </div>
+            
+            <div class="d-flex justify-between mt-30">
+                <button class="btn btn-outline" onclick="closeReportModal()">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+                <button class="btn btn-primary" onclick="exportReport()">
+                    <i class="fas fa-download"></i> Exportar Relatório
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados globais do sistema
+        let transactions = [];
+        let rawTransactions = [];
+        let rules = [];
+        let complementRules = [];
+        let bankAccountCode = "1.1.1.001";
+        let defaultHistory = "Movimentação Bancária";
+        let previousBalance = 0;
+        let totalCredits = 0;
+        let totalDebits = 0;
+        let finalBalance = 0;
+        let chartOfAccounts = [];
+        let fileStructures = {};
+        let selectedTransactions = new Set();
+        let currentFileType = 'ofx';
+        let csvStructure = {
+            dateColumn: 'A',
+            dateFormat: 'dd/MM/yyyy',
+            descColumn: 'B',
+            valueColumn: 'C',
+            valueFormat: 'decimal_comma',
+            typeColumn: '',
+            typeFormat: 'positive_negative',
+            startRow: 1
+        };
+        
+        // Elementos DOM
+        const fileInput = document.getElementById('fileInput');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const excelFileInput = document.getElementById('excelFileInput');
+        const dropArea = document.getElementById('dropArea');
+        const csvDropArea = document.getElementById('csvDropArea');
+        const excelDropArea = document.getElementById('excelDropArea');
+        const fileName = document.getElementById('fileName');
+        const csvFileName = document.getElementById('csvFileName');
+        const excelFileName = document.getElementById('excelFileName');
+        const bankAccountCodeInput = document.getElementById('bankAccountCode');
+        const defaultHistoryInput = document.getElementById('defaultHistory');
+        const previousBalanceInput = document.getElementById('previousBalance');
+        const rulesContainer = document.getElementById('rulesContainer');
+        const transactionsTableBody = document.getElementById('transactionsTableBody');
+        const loading = document.getElementById('loading');
+        const statusMessage = document.getElementById('statusMessage');
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        const exportTxtBtn = document.getElementById('exportTxtBtn');
+        const exportExcelBtn2 = document.getElementById('exportExcelBtn2');
+        const exportTxtBtn2 = document.getElementById('exportTxtBtn2');
+        const transactionCount = document.getElementById('transactionCount');
+        const transactionsBadge = document.getElementById('transactionsBadge');
+        const helpModal = document.getElementById('helpModal');
+        const batchEditPanel = document.getElementById('batchEditPanel');
+        const selectedCount = document.getElementById('selectedCount');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        
+        // Modais
+        const fileStructureModal = document.getElementById('fileStructureModal');
+        const complementModal = document.getElementById('complementModal');
+        const debitCreditComplementModal = document.getElementById('debitCreditComplementModal');
+        const batchEditModal = document.getElementById('batchEditModal');
+        const advancedFilterModal = document.getElementById('advancedFilterModal');
+        const reportModal = document.getElementById('reportModal');
+        
+        // Elementos do resumo financeiro
+        const summaryPreviousBalance = document.getElementById('summaryPreviousBalance');
+        const summaryTotalCredits = document.getElementById('summaryTotalCredits');
+        const summaryTotalDebits = document.getElementById('summaryTotalDebits');
+        const summaryFinalBalance = document.getElementById('summaryFinalBalance');
+        
+        // Elementos do cálculo
+        const calcPreviousBalance = document.getElementById('calcPreviousBalance');
+        const calcCredits = document.getElementById('calcCredits');
+        const calcDebits = document.getElementById('calcDebits');
+        const calcSubtotal = document.getElementById('calcSubtotal');
+        const calcFinalBalance = document.getElementById('calcFinalBalance');
+        
+        // Seções
+        const sections = {
+            import: document.getElementById('importSection'),
+            rules: document.getElementById('rulesSection'),
+            summary: document.getElementById('summarySection'),
+            transactions: document.getElementById('transactionsSection'),
+            settings: document.getElementById('settingsSection'),
+            chart: document.getElementById('chartSection')
+        };
+        
+        // Títulos das páginas
+        const pageTitles = {
+            import: "Importar Extrato",
+            rules: "Regras de Lançamento",
+            summary: "Resumo Financeiro",
+            transactions: "Transações Processadas",
+            settings: "Configurações do Sistema",
+            chart: "Plano de Contas"
+        };
+        
+        const pageSubtitles = {
+            import: "Carregue seu extrato bancário para processamento automático",
+            rules: "Configure regras para categorização automática das transações",
+            summary: "Visualize o resumo financeiro e cálculos",
+            transactions: "Extrato bancário organizado com lançamentos contábeis",
+            settings: "Configure as preferências do sistema",
+            chart: "Gerencie o plano de contas do sistema"
+        };
+        
+        // Inicialização do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar dados do localStorage
+            loadFromLocalStorage();
+            
+            // Configurar event listeners
+            setupEventListeners();
+            
+            // Configurar navegação
+            setupNavigation();
+            
+            // Atualizar resumo financeiro inicial
+            updateFinancialSummary();
+            
+            // Mostrar mensagem de boas-vindas
+            setTimeout(() => {
+                showStatus("Bem-vindo ao SIS-C v2.0! Importe um extrato para começar.", "info");
+            }, 1000);
+            
+            // Iniciar auto-save se configurado
+            startAutoSave();
+        });
+        
+        // Carregar dados do localStorage
+        function loadFromLocalStorage() {
+            // Carregar plano de contas
+            const storedChart = localStorage.getItem('chartOfAccounts');
+            if (storedChart) {
+                chartOfAccounts = JSON.parse(storedChart);
+                renderChartOfAccounts();
+            } else {
+                loadDefaultChartOfAccounts();
+            }
+            
+            // Carregar regras
+            const storedRules = localStorage.getItem('rules');
+            if (storedRules) {
+                rules = JSON.parse(storedRules);
+            } else {
+                loadDefaultRules();
+            }
+            renderRules();
+            
+            // Carregar regras de complemento
+            const storedComplementRules = localStorage.getItem('complementRules');
+            if (storedComplementRules) {
+                complementRules = JSON.parse(storedComplementRules);
+            } else {
+                loadDefaultComplementRules();
+            }
+            
+            // Carregar estruturas de arquivo
+            const storedStructures = localStorage.getItem('fileStructures');
+            if (storedStructures) {
+                fileStructures = JSON.parse(storedStructures);
+            }
+            
+            // Carregar configurações
+            const storedSettings = localStorage.getItem('settings');
+            if (storedSettings) {
+                const settings = JSON.parse(storedSettings);
+                if (settings.bankAccountCode) bankAccountCode = settings.bankAccountCode;
+                if (settings.defaultHistory) defaultHistory = settings.defaultHistory;
+                if (settings.previousBalance) previousBalance = settings.previousBalance;
+                
+                // Aplicar configurações nos inputs
+                bankAccountCodeInput.value = bankAccountCode;
+                defaultHistoryInput.value = defaultHistory;
+                previousBalanceInput.value = previousBalance;
+                
+                // Aplicar outras configurações
+                if (settings.numberFormat) document.getElementById('numberFormat').value = settings.numberFormat;
+                if (settings.dateFormat) document.getElementById('dateFormat').value = settings.dateFormat;
+                if (settings.exportFormat) document.getElementById('exportFormat').value = settings.exportFormat;
+                if (settings.autoSave) document.getElementById('autoSave').value = settings.autoSave;
+            }
+            
+            // Carregar transações se existirem
+            const storedTransactions = localStorage.getItem('transactions');
+            if (storedTransactions && storedTransactions.length > 2) {
+                try {
+                    const data = JSON.parse(storedTransactions);
+                    transactions = data.transactions || [];
+                    rawTransactions = data.rawTransactions || [];
+                    totalCredits = data.totalCredits || 0;
+                    totalDebits = data.totalDebits || 0;
+                    
+                    if (transactions.length > 0) {
+                        displayTransactions();
+                        updateFinancialSummary();
+                        exportExcelBtn.disabled = false;
+                        exportTxtBtn.disabled = false;
+                        exportExcelBtn2.disabled = false;
+                        exportTxtBtn2.disabled = false;
+                        applyRulesBtn.disabled = false;
+                        applyRulesBtn2.disabled = false;
+                        transactionsBadge.textContent = transactions.length;
+                        transactionsBadge.classList.remove('d-none');
+                        showStatus(`${transactions.length} transações carregadas do último trabalho.`, "success");
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar transações:", e);
+                }
+            }
+        }
+        
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Upload de arquivo OFX
+            fileInput.addEventListener('change', function(e) {
+                if (this.files.length) {
+                    const file = this.files[0];
+                    fileName.textContent = `Arquivo selecionado: ${file.name}`;
+                    showStatus(`Arquivo "${file.name}" selecionado com sucesso!`, "success");
+                }
+            });
+            
+            // Upload de arquivo CSV
+            csvFileInput.addEventListener('change', function(e) {
+                if (this.files.length) {
+                    const file = this.files[0];
+                    csvFileName.textContent = `Arquivo selecionado: ${file.name}`;
+                    showStatus(`Arquivo CSV "${file.name}" selecionado com sucesso!`, "success");
+                }
+            });
+            
+            // Upload de arquivo Excel
+            excelFileInput.addEventListener('change', function(e) {
+                if (this.files.length) {
+                    const file = this.files[0];
+                    excelFileName.textContent = `Arquivo selecionado: ${file.name}`;
+                    showStatus(`Arquivo Excel "${file.name}" selecionado com sucesso!`, "success");
+                }
+            });
+            
+            // Drag and drop para OFX
+            setupDragAndDrop(dropArea, fileInput, fileName, 'OFX');
+            
+            // Drag and drop para CSV
+            setupDragAndDrop(csvDropArea, csvFileInput, csvFileName, 'CSV');
+            
+            // Drag and drop para Excel
+            setupDragAndDrop(excelDropArea, excelFileInput, excelFileName, 'Excel');
+            
+            // Configurações do sistema
+            bankAccountCodeInput.addEventListener('input', function() {
+                bankAccountCode = this.value;
+                saveSettings();
+            });
+            
+            defaultHistoryInput.addEventListener('input', function() {
+                defaultHistory = this.value;
+                saveSettings();
+            });
+            
+            previousBalanceInput.addEventListener('input', function() {
+                previousBalance = parseFloat(this.value) || 0;
+                updateFinancialSummary();
+                saveSettings();
+            });
+            
+            // Menu mobile
+            document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+            
+            // Carregar valores iniciais
+            bankAccountCode = bankAccountCodeInput.value;
+            defaultHistory = defaultHistoryInput.value;
+            previousBalance = parseFloat(previousBalanceInput.value) || 0;
+        }
+        
+        // Configurar drag and drop
+        function setupDragAndDrop(dropArea, fileInput, fileNameElement, fileType) {
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.classList.add('dragover');
+            });
+            
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.classList.remove('dragover');
+            });
+            
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    const file = e.dataTransfer.files[0];
+                    
+                    // Verificar extensão do arquivo
+                    const validExtensions = {
+                        'OFX': ['.ofx', '.qfx'],
+                        'CSV': ['.csv', '.txt'],
+                        'Excel': ['.xlsx', '.xls']
+                    };
+                    
+                    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+                    const isValid = validExtensions[fileType].includes(fileExt);
+                    
+                    if (isValid) {
+                        // Criar um DataTransfer para atribuir o arquivo ao input
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        fileInput.files = dataTransfer.files;
+                        
+                        fileNameElement.textContent = `Arquivo selecionado: ${file.name}`;
+                        showStatus(`Arquivo "${file.name}" carregado com sucesso!`, "success");
+                    } else {
+                        showStatus(`Formato inválido. Use ${validExtensions[fileType].join(', ')}`, "error");
+                    }
+                }
+            });
+        }
+        
+        // Alternar entre abas de importação
+        function switchImportTab(tab) {
+            // Atualizar tabs
+            document.querySelectorAll('#importTabs .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#importTabs .tab').forEach(t => {
+                if (t.textContent.includes(tab.toUpperCase())) {
+                    t.classList.add('active');
+                }
+            });
+            
+            // Atualizar conteúdo
+            document.querySelectorAll('#importSection .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tab}Tab`).classList.add('active');
+            
+            currentFileType = tab;
+        }
+        
+        // Alternar entre abas de estrutura
+        function switchStructureTab(tab) {
+            document.querySelectorAll('#fileStructureModal .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#fileStructureModal .tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`#fileStructureModal .tab[onclick*="${tab}"]`).classList.add('active');
+            document.getElementById(`${tab}StructureTab`).classList.add('active');
+        }
+        
+        // Configurar navegação
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const section = this.getAttribute('data-section');
+                    if (section) {
+                        navigateToSection(section);
+                    }
+                });
+            });
+        }
+        
+        // Navegar para seção
+        function navigateToSection(section) {
+            // Esconder todas as seções
+            Object.values(sections).forEach(sec => {
+                sec.classList.add('d-none');
+            });
+            
+            // Mostrar seção selecionada
+            if (sections[section]) {
+                sections[section].classList.remove('d-none');
+            }
+            
+            // Atualizar título da página
+            document.getElementById('pageTitle').textContent = pageTitles[section] || pageTitles.import;
+            document.getElementById('pageSubtitle').textContent = pageSubtitles[section] || pageSubtitles.import;
+            
+            // Atualizar item ativo no menu
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-section') === section) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Fechar menu mobile se aberto
+            closeMobileMenu();
+        }
+        
+        // Alternar menu mobile
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            } else {
+                sidebar.classList.add('open');
+                overlay.classList.add('show');
+            }
+        }
+        
+        // Fechar menu mobile
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+        
+        // Carregar plano de contas padrão
+        function loadDefaultChartOfAccounts() {
+            chartOfAccounts = [
+                { code: "1.1.1.001", description: "Caixa", group: "Ativo", type: "Ativo" },
+                { code: "1.1.2.001", description: "Banco Conta Corrente", group: "Ativo", type: "Ativo" },
+                { code: "2.1.1.001", description: "Fornecedores", group: "Passivo", type: "Passivo" },
+                { code: "3.1.1.001", description: "Receita de Salários", group: "Receita", type: "Receita" },
+                { code: "3.1.2.001", description: "Receita de Vendas", group: "Receita", type: "Receita" },
+                { code: "4.1.1.001", description: "Despesas Alimentação", group: "Despesa", type: "Despesa" },
+                { code: "4.1.2.001", description: "Despesas Aluguel", group: "Despesa", type: "Despesa" },
+                { code: "4.1.3.001", description: "Despesas Energia", group: "Despesa", type: "Despesa" },
+                { code: "4.1.4.001", description: "Despesas Internet", group: "Despesa", type: "Despesa" },
+                { code: "565", description: "Tarifas Bancárias", group: "Despesa", type: "Despesa" }
+            ];
+            localStorage.setItem('chartOfAccounts', JSON.stringify(chartOfAccounts));
+            renderChartOfAccounts();
+        }
+        
+        // Carregar regras padrão
+        function loadDefaultRules() {
+            rules = [
+                { keyword: "SALÁRIO", type: "credit", account: "3.1.1.001", complementAction: "add_beginning", complementText: "RECEBIMENTO DE - " },
+                { keyword: "SUPERMERCADO", type: "debit", account: "4.1.1.001", complementAction: "add_beginning", complementText: "PGTO A - " },
+                { keyword: "ALUGUEL", type: "debit", account: "4.1.2.001", complementAction: "add_beginning", complementText: "PGTO A - " },
+                { keyword: "VENDA", type: "credit", account: "3.1.2.001", complementAction: "add_beginning", complementText: "RECEBIMENTO DE - " },
+                { keyword: "LUZ", type: "debit", account: "4.1.3.001", complementAction: "add_beginning", complementText: "PGTO A - " },
+                { keyword: "ÁGUA", type: "debit", account: "4.1.3.002", complementAction: "add_beginning", complementText: "PGTO A - " },
+                { keyword: "INTERNET", type: "debit", account: "4.1.4.001", complementAction: "add_beginning", complementText: "PGTO A - " },
+                { keyword: "TARIFA", type: "debit", account: "565", complementAction: "replace", complementText: "TARIFA BANCARIA" }
+            ];
+            localStorage.setItem('rules', JSON.stringify(rules));
+        }
+        
+        // Carregar regras de complemento padrão
+        function loadDefaultComplementRules() {
+            complementRules = [
+                { debitCode: "565", creditCode: "", action: "replace", complement: "TARIFA BANCARIA" },
+                { debitCode: "4.1.1.001", creditCode: "", action: "add_beginning", complement: "PGTO A SUPERMERCADO - " },
+                { debitCode: "", creditCode: "3.1.1.001", action: "add_beginning", complement: "RECEBIMENTO SALÁRIO - " }
+            ];
+            localStorage.setItem('complementRules', JSON.stringify(complementRules));
+        }
+        
+        // Renderizar regras na interface
+        function renderRules() {
+            rulesContainer.innerHTML = '';
+            
+            if (rules.length === 0) {
+                rulesContainer.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: var(--gray);">
+                        <i class="fas fa-sliders-h" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <div>Nenhuma regra definida. Adicione sua primeira regra.</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            rules.forEach((rule, index) => {
+                const ruleItem = document.createElement('div');
+                ruleItem.className = 'rule-item';
+                ruleItem.innerHTML = `
+                    <input type="text" class="rule-keyword" placeholder="Palavra-chave" value="${rule.keyword}" 
+                        onchange="updateRule(${index}, this.value, 'keyword')">
+                    <select class="rule-type" onchange="updateRule(${index}, this.value, 'type')">
+                        <option value="credit" ${rule.type === 'credit' ? 'selected' : ''}>Crédito (Entrada)</option>
+                        <option value="debit" ${rule.type === 'debit' ? 'selected' : ''}>Débito (Saída)</option>
+                    </select>
+                    <input type="text" class="rule-account" placeholder="Conta contábil" value="${rule.account}" 
+                        onchange="updateRule(${index}, this.value, 'account')">
+                    <input type="text" class="complement-rule-input" placeholder="Complemento (opcional)" value="${rule.complementText || ''}" 
+                        onchange="updateRule(${index}, this.value, 'complementText')">
+                    <div class="d-flex gap-10">
+                        <button class="btn btn-outline btn-sm" onclick="moveRuleUp(${index})" ${index === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="moveRuleDown(${index})" ${index === rules.length - 1 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="removeRuleByIndex(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                rulesContainer.appendChild(ruleItem);
+            });
+        }
+        
+        // Atualizar uma regra
+        function updateRule(index, value, field) {
+            if (field === 'keyword') {
+                rules[index].keyword = value.toUpperCase();
+            } else if (field === 'type') {
+                rules[index].type = value;
+            } else if (field === 'account') {
+                rules[index].account = value;
+            } else if (field === 'complementText') {
+                rules[index].complementText = value;
+            }
+            
+            localStorage.setItem('rules', JSON.stringify(rules));
+            showStatus("Regra atualizada com sucesso.", "success");
+        }
+        
+        // Mover regra para cima
+        function moveRuleUp(index) {
+            if (index > 0) {
+                const temp = rules[index];
+                rules[index] = rules[index - 1];
+                rules[index - 1] = temp;
+                renderRules();
+                localStorage.setItem('rules', JSON.stringify(rules));
+            }
+        }
+        
+        // Mover regra para baixo
+        function moveRuleDown(index) {
+            if (index < rules.length - 1) {
+                const temp = rules[index];
+                rules[index] = rules[index + 1];
+                rules[index + 1] = temp;
+                renderRules();
+                localStorage.setItem('rules', JSON.stringify(rules));
+            }
+        }
+        
+        // Adicionar nova regra
+        function addRule() {
+            rules.push({
+                keyword: "",
+                type: "credit",
+                account: "",
+                complementAction: "add_beginning",
+                complementText: ""
+            });
+            renderRules();
+            localStorage.setItem('rules', JSON.stringify(rules));
+            showStatus("Nova regra adicionada. Preencha os campos.", "info");
+        }
+        
+        // Remover regra pelo índice
+        function removeRuleByIndex(index) {
+            if (confirm("Tem certeza que deseja remover esta regra?")) {
+                rules.splice(index, 1);
+                renderRules();
+                localStorage.setItem('rules', JSON.stringify(rules));
+                showStatus("Regra removida com sucesso.", "success");
+            }
+        }
+        
+        // Processar arquivo
+        function processFile(fileType) {
+            let file, reader;
+            
+            if (fileType === 'ofx') {
+                if (!fileInput.files.length) {
+                    showStatus("Por favor, selecione um arquivo OFX primeiro.", "error");
+                    return;
+                }
+                file = fileInput.files[0];
+                reader = new FileReader();
+                reader.onload = function(e) {
+                    processOFXContent(e.target.result);
+                };
+                reader.readAsText(file);
+            } 
+            else if (fileType === 'csv') {
+                if (!csvFileInput.files.length) {
+                    showStatus("Por favor, selecione um arquivo CSV primeiro.", "error");
+                    return;
+                }
+                file = csvFileInput.files[0];
+                reader = new FileReader();
+                reader.onload = function(e) {
+                    processCSVContent(e.target.result);
+                };
+                reader.readAsText(file);
+            }
+            else if (fileType === 'excel') {
+                if (!excelFileInput.files.length) {
+                    showStatus("Por favor, selecione um arquivo Excel primeiro.", "error");
+                    return;
+                }
+                file = excelFileInput.files[0];
+                reader = new FileReader();
+                reader.onload = function(e) {
+                    processExcelContent(e.target.result);
+                };
+                reader.readAsBinaryString(file);
+            }
+            
+            loading.style.display = 'block';
+            currentFileType = fileType;
+        }
+        
+        // Processar conteúdo OFX
+        function processOFXContent(content) {
+            try {
+                rawTransactions = [];
+                
+                if (!content.includes('<OFX>') && !content.includes('<OFX>')) {
+                    throw new Error("Arquivo OFX inválido ou formato não suportado.");
+                }
+                
+                const transactionRegex = /<STMTTRN>.*?<\/STMTTRN>/gs;
+                const transactionsMatch = content.match(transactionRegex);
+                
+                if (!transactionsMatch) {
+                    const altTransactionRegex = /<STMTTRN>[\s\S]*?<\/STMTTRN>/g;
+                    const altTransactionsMatch = content.match(altTransactionRegex);
+                    
+                    if (!altTransactionsMatch) {
+                        throw new Error("Nenhuma transação encontrada no arquivo.");
+                    }
+                    
+                    altTransactionsMatch.forEach(transBlock => {
+                        processOFXTransactionBlock(transBlock);
+                    });
+                } else {
+                    transactionsMatch.forEach(transBlock => {
+                        processOFXTransactionBlock(transBlock);
+                    });
+                }
+                
+                if (rawTransactions.length > 0) {
+                    processTransactionsWithRules();
+                    displayTransactions();
+                    updateFinancialSummary();
+                    enableExportButtons();
+                    
+                    navigateToSection('transactions');
+                    showStatus(`Processamento concluído! ${rawTransactions.length} transações extraídas.`, "success");
+                } else {
+                    throw new Error("Nenhuma transação encontrada no arquivo.");
+                }
+            } catch (error) {
+                showStatus(`Erro ao processar o arquivo: ${error.message}`, "error");
+                console.error(error);
+                
+                // Fallback para demonstração
+                simulateTransactions();
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        // Processar bloco de transação OFX
+        function processOFXTransactionBlock(block) {
+            const dateMatch = block.match(/<DTPOSTED>(\d{8})/);
+            const amountMatch = block.match(/<TRNAMT>([-\d,.]+)/);
+            const memoMatch = block.match(/<MEMO>([^<]+)/);
+            
+            if (!dateMatch || !amountMatch) return;
+            
+            const dateStr = dateMatch[1];
+            const amount = parseFloat(amountMatch[1].replace(',', '.'));
+            const description = memoMatch ? memoMatch[1].trim() : '';
+            
+            const formattedDate = `${dateStr.substring(6,8)}/${dateStr.substring(4,6)}/${dateStr.substring(0,4)}`;
+            
+            rawTransactions.push({
+                date: formattedDate,
+                amount: amount,
+                description: description,
+                type: amount < 0 ? 'debit' : 'credit'
+            });
+        }
+        
+        // Processar conteúdo CSV
+        function processCSVContent(content) {
+            try {
+                rawTransactions = [];
+                
+                const separator = document.getElementById('csvSeparator').value;
+                const hasHeader = document.getElementById('csvHasHeader').value === 'true';
+                const startRow = parseInt(document.getElementById('csvStartRow').value) || 1;
+                
+                const config = {
+                    delimiter: separator,
+                    header: false,
+                    skipEmptyLines: true
+                };
+                
+                const results = Papa.parse(content, config);
+                
+                if (results.errors.length > 0) {
+                    console.warn("Erros no parsing CSV:", results.errors);
+                }
+                
+                const rows = results.data;
+                let startIndex = hasHeader ? startRow - 1 : 0;
+                
+                for (let i = startIndex; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.length < 3) continue;
+                    
+                    // Tentar extrair dados baseado na estrutura padrão
+                    let date, description, amount;
+                    
+                    if (csvStructure.dateColumn) {
+                        const colIndex = getColumnIndex(csvStructure.dateColumn);
+                        if (colIndex >= 0 && colIndex < row.length) {
+                            date = parseDate(row[colIndex], csvStructure.dateFormat);
+                        }
+                    }
+                    
+                    if (csvStructure.descColumn) {
+                        const colIndex = getColumnIndex(csvStructure.descColumn);
+                        if (colIndex >= 0 && colIndex < row.length) {
+                            description = row[colIndex];
+                        }
+                    }
+                    
+                    if (csvStructure.valueColumn) {
+                        const colIndex = getColumnIndex(csvStructure.valueColumn);
+                        if (colIndex >= 0 && colIndex < row.length) {
+                            amount = parseValue(row[colIndex], csvStructure.valueFormat);
+                        }
+                    }
+                    
+                    // Se não encontrou dados com estrutura, tentar padrão comum
+                    if (!date || !description || amount === undefined) {
+                        date = parseDate(row[0]);
+                        description = row[1] || '';
+                        amount = parseValue(row[2]);
+                    }
+                    
+                    if (date && description && amount !== undefined) {
+                        rawTransactions.push({
+                            date: date,
+                            amount: amount,
+                            description: description.trim(),
+                            type: amount < 0 ? 'debit' : 'credit'
+                        });
+                    }
+                }
+                
+                if (rawTransactions.length > 0) {
+                    processTransactionsWithRules();
+                    displayTransactions();
+                    updateFinancialSummary();
+                    enableExportButtons();
+                    
+                    navigateToSection('transactions');
+                    showStatus(`Processamento concluído! ${rawTransactions.length} transações extraídas do CSV.`, "success");
+                } else {
+                    throw new Error("Nenhuma transação válida encontrada no CSV.");
+                }
+            } catch (error) {
+                showStatus(`Erro ao processar o CSV: ${error.message}`, "error");
+                console.error(error);
+                
+                // Fallback para demonstração
+                simulateTransactions();
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        // Processar conteúdo Excel
+        function processExcelContent(content) {
+            try {
+                rawTransactions = [];
+                
+                const workbook = XLSX.read(content, { type: 'binary' });
+                const sheetName = document.getElementById('excelSheetName').value || workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                if (!worksheet) {
+                    throw new Error(`Planilha "${sheetName}" não encontrada.`);
+                }
+                
+                const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                // Assumir que a primeira linha é cabeçalho
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || row.length < 3) continue;
+                    
+                    let date, description, amount;
+                    
+                    // Tentar extrair dados baseado na estrutura padrão
+                    if (csvStructure.dateColumn) {
+                        const colIndex = getColumnIndex(csvStructure.dateColumn);
+                        if (colIndex >= 0 && colIndex < row.length) {
+                            date = parseExcelDate(row[colIndex], csvStructure.dateFormat);
+                        }
+                    }
+                    
+                    if (csvStructure.descColumn) {
+                        const colIndex = getColumnIndex(csvStructure.descColumn);
+                        if (colIndex >= 0 && colIndex < row.length) {
+                            description = row[colIndex];
+                        }
+                    }
+                    
+                    if (csvStructure.valueColumn) {
+                        const colIndex = getColumnIndex(csvStructure.valueColumn);
+                        if (colIndex >= 0 && colIndex < row.length) {
+                            amount = parseValue(row[colIndex], csvStructure.valueFormat);
+                        }
+                    }
+                    
+                    // Se não encontrou, tentar padrão
+                    if (!date || !description || amount === undefined) {
+                        date = parseExcelDate(row[0]);
+                        description = row[1] || '';
+                        amount = parseValue(row[2]);
+                    }
+                    
+                    if (date && description && amount !== undefined) {
+                        rawTransactions.push({
+                            date: date,
+                            amount: amount,
+                            description: description.toString().trim(),
+                            type: amount < 0 ? 'debit' : 'credit'
+                        });
+                    }
+                }
+                
+                if (rawTransactions.length > 0) {
+                    processTransactionsWithRules();
+                    displayTransactions();
+                    updateFinancialSummary();
+                    enableExportButtons();
+                    
+                    navigateToSection('transactions');
+                    showStatus(`Processamento concluído! ${rawTransactions.length} transações extraídas do Excel.`, "success");
+                } else {
+                    throw new Error("Nenhuma transação válida encontrada no Excel.");
+                }
+            } catch (error) {
+                showStatus(`Erro ao processar o Excel: ${error.message}`, "error");
+                console.error(error);
+                
+                // Fallback para demonstração
+                simulateTransactions();
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        // Obter índice da coluna
+        function getColumnIndex(colString) {
+            if (!colString) return -1;
+            
+            // Se for número, retornar como índice (0-based)
+            if (!isNaN(colString)) {
+                return parseInt(colString) - 1;
+            }
+            
+            // Se for letra (A, B, C, etc.), converter para índice
+            colString = colString.toUpperCase();
+            let result = 0;
+            for (let i = 0; i < colString.length; i++) {
+                result = result * 26 + (colString.charCodeAt(i) - 64);
+            }
+            return result - 1; // 0-based index
+        }
+        
+        // Analisar data
+        function parseDate(dateString, format = 'dd/MM/yyyy') {
+            if (!dateString) return null;
+            
+            let date;
+            
+            // Tentar diferentes formatos
+            const formats = [
+                'dd/MM/yyyy',
+                'dd-MM-yyyy',
+                'yyyy-MM-dd',
+                'MM/dd/yyyy',
+                'dd.MM.yyyy'
+            ];
+            
+            for (const fmt of formats) {
+                const parts = dateString.toString().split(/[\/\-\.]/);
+                if (parts.length === 3) {
+                    let day, month, year;
+                    
+                    if (fmt === 'dd/MM/yyyy' || fmt === 'dd-MM-yyyy' || fmt === 'dd.MM.yyyy') {
+                        day = parseInt(parts[0]);
+                        month = parseInt(parts[1]) - 1;
+                        year = parseInt(parts[2]);
+                    } else if (fmt === 'MM/dd/yyyy') {
+                        month = parseInt(parts[0]) - 1;
+                        day = parseInt(parts[1]);
+                        year = parseInt(parts[2]);
+                    } else if (fmt === 'yyyy-MM-dd') {
+                        year = parseInt(parts[0]);
+                        month = parseInt(parts[1]) - 1;
+                        day = parseInt(parts[2]);
+                    }
+                    
+                    // Corrigir ano de 2 dígitos
+                    if (year < 100) {
+                        year += 2000;
+                    }
+                    
+                    date = new Date(year, month, day);
+                    if (!isNaN(date.getTime())) {
+                        return formatDate(date);
+                    }
+                }
+            }
+            
+            // Se ainda não encontrou, tentar Date.parse
+            date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                return formatDate(date);
+            }
+            
+            return null;
+        }
+        
+        // Analisar data do Excel
+        function parseExcelDate(excelDate, format = 'dd/MM/yyyy') {
+            if (excelDate instanceof Date) {
+                return formatDate(excelDate);
+            }
+            
+            // Excel armazena datas como números
+            if (typeof excelDate === 'number') {
+                const date = new Date((excelDate - 25569) * 86400 * 1000);
+                return formatDate(date);
+            }
+            
+            // Se for string, usar parseDate normal
+            return parseDate(excelDate, format);
+        }
+        
+        // Analisar valor
+        function parseValue(valueString, format = 'decimal_comma') {
+            if (valueString === undefined || valueString === null || valueString === '') return 0;
+            
+            let value;
+            
+            if (typeof valueString === 'number') {
+                value = valueString;
+            } else {
+                const str = valueString.toString().trim();
+                
+                if (format === 'decimal_comma') {
+                    // Remover pontos de milhar e substituir vírgula decimal por ponto
+                    value = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+                } else if (format === 'decimal_dot') {
+                    // Remover vírgulas de milhar
+                    value = parseFloat(str.replace(/,/g, ''));
+                } else {
+                    // Tentar ambos
+                    const cleanStr = str.replace(/[^\d,\-.]/g, '');
+                    if (cleanStr.includes(',') && cleanStr.includes('.')) {
+                        // Se tiver ambos, assumir que vírgula é decimal
+                        value = parseFloat(cleanStr.replace(/\./g, '').replace(',', '.'));
+                    } else {
+                        value = parseFloat(cleanStr.replace(',', '.'));
+                    }
+                }
+            }
+            
+            return isNaN(value) ? 0 : value;
+        }
+        
+        // Formatar data para exibição
+        function formatDate(date) {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Simular transações para demonstração
+        function simulateTransactions() {
+            rawTransactions = [
+                { date: "15/10/2023", amount: 3500.00, description: "SALÁRIO OUTUBRO/2023", type: "credit" },
+                { date: "16/10/2023", amount: -150.75, description: "SUPERMERCADO COMPRAS DO MÊS", type: "debit" },
+                { date: "17/10/2023", amount: -850.00, description: "ALUGUEL RESIDENCIAL", type: "debit" },
+                { date: "18/10/2023", amount: 1250.50, description: "VENDA PRODUTO A", type: "credit" },
+                { date: "19/10/2023", amount: -120.30, description: "LUZ MÊS OUTUBRO", type: "debit" },
+                { date: "20/10/2023", amount: -65.20, description: "ÁGUA CONSUMO OUTUBRO", type: "debit" },
+                { date: "21/10/2023", amount: 500.00, description: "DEPÓSITO CLIENTE B", type: "credit" },
+                { date: "22/10/2023", amount: -45.90, description: "INTERNET MENSALIDADE", type: "debit" },
+                { date: "23/10/2023", amount: -80.00, description: "TRANSPORTE UBER", type: "debit" },
+                { date: "24/10/2023", amount: -120.00, description: "CONSULTA MÉDICA", type: "debit" },
+                { date: "25/10/2023", amount: -15.00, description: "TARIFA BANCARIA MENSAL", type: "debit" }
+            ];
+            
+            processTransactionsWithRules();
+            displayTransactions();
+            updateFinancialSummary();
+            enableExportButtons();
+            
+            navigateToSection('transactions');
+            showStatus("Modo de demonstração ativado. Use um arquivo real para processamento completo.", "info");
+        }
+        
+        // Habilitar botões de exportação
+        function enableExportButtons() {
+            exportExcelBtn.disabled = false;
+            exportTxtBtn.disabled = false;
+            exportExcelBtn2.disabled = false;
+            exportTxtBtn2.disabled = false;
+            applyRulesBtn.disabled = false;
+            applyRulesBtn2.disabled = false;
+            
+            transactionsBadge.textContent = transactions.length;
+            transactionsBadge.classList.remove('d-none');
+            
+            // Salvar automaticamente
+            saveToLocalStorage();
+        }
+        
+        // Processar transações aplicando regras
+        function processTransactionsWithRules() {
+            transactions = [];
+            totalCredits = 0;
+            totalDebits = 0;
+            
+            rawTransactions.forEach(rawTrans => {
+                const transaction = {
+                    date: rawTrans.date,
+                    amount: rawTrans.amount,
+                    description: rawTrans.description,
+                    debitCode: '',
+                    creditCode: '',
+                    type: rawTrans.type,
+                    originalDescription: rawTrans.description,
+                    id: generateId()
+                };
+                
+                applyRulesToTransaction(transaction);
+                applyAutoComplementLogic(transaction);
+                
+                transactions.push(transaction);
+            });
+        }
+        
+        // Gerar ID único
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // Aplicar regras a uma transação
+        function applyRulesToTransaction(transaction) {
+            const descriptionUpper = transaction.description.toUpperCase();
+            let ruleApplied = false;
+            
+            for (const rule of rules) {
+                if (rule.keyword && descriptionUpper.includes(rule.keyword.toUpperCase())) {
+                    ruleApplied = true;
+                    
+                    if (rule.type === 'credit') {
+                        if (transaction.amount >= 0) {
+                            transaction.debitCode = bankAccountCode;
+                            transaction.creditCode = rule.account;
+                            totalCredits += transaction.amount;
+                        } else {
+                            transaction.debitCode = "";
+                            transaction.creditCode = bankAccountCode;
+                            totalDebits += Math.abs(transaction.amount);
+                        }
+                    } else if (rule.type === 'debit') {
+                        if (transaction.amount < 0) {
+                            transaction.debitCode = rule.account;
+                            transaction.creditCode = bankAccountCode;
+                            totalDebits += Math.abs(transaction.amount);
+                        } else {
+                            transaction.debitCode = bankAccountCode;
+                            transaction.creditCode = "";
+                            totalCredits += transaction.amount;
+                        }
+                    }
+                    
+                    if (rule.complementText) {
+                        if (rule.complementAction === 'replace') {
+                            transaction.description = rule.complementText;
+                        } else if (rule.complementAction === 'add_beginning') {
+                            transaction.description = rule.complementText + transaction.originalDescription;
+                        }
+                    }
+                    
+                    break;
+                }
+            }
+            
+            if (!ruleApplied) {
+                if (transaction.amount >= 0) {
+                    transaction.debitCode = bankAccountCode;
+                    transaction.creditCode = "";
+                    totalCredits += transaction.amount;
+                } else {
+                    transaction.debitCode = "";
+                    transaction.creditCode = bankAccountCode;
+                    totalDebits += Math.abs(transaction.amount);
+                }
+            }
+        }
+        
+        // Aplicar lógica automática de complemento
+        function applyAutoComplementLogic(transaction) {
+            if (transaction.debitCode === bankAccountCode) {
+                if (!transaction.description.startsWith("RECEBIMENTO DE - ")) {
+                    transaction.description = "RECEBIMENTO DE - " + transaction.originalDescription;
+                }
+            }
+            
+            if (transaction.creditCode === bankAccountCode) {
+                if (!transaction.description.startsWith("PGTO A - ")) {
+                    transaction.description = "PGTO A - " + transaction.originalDescription;
+                }
+            }
+            
+            for (const rule of complementRules) {
+                let match = false;
+                
+                if (rule.debitCode && rule.creditCode) {
+                    match = (transaction.debitCode === rule.debitCode && transaction.creditCode === rule.creditCode);
+                } else if (rule.debitCode) {
+                    match = (transaction.debitCode === rule.debitCode);
+                } else if (rule.creditCode) {
+                    match = (transaction.creditCode === rule.creditCode);
+                }
+                
+                if (match) {
+                    if (rule.action === 'replace') {
+                        transaction.description = rule.complement;
+                    } else if (rule.action === 'add_beginning') {
+                        if (!transaction.description.startsWith(rule.complement)) {
+                            transaction.description = rule.complement + transaction.originalDescription;
+                        }
+                    } else if (rule.action === 'add_end') {
+                        if (!transaction.description.endsWith(rule.complement)) {
+                            transaction.description = transaction.originalDescription + " " + rule.complement;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // Exibir transações na tabela
+        function displayTransactions() {
+            if (transactions.length === 0) {
+                transactionsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center" style="padding: 40px;">
+                            <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; color: var(--border); margin-bottom: 15px;"></i>
+                            <div style="font-size: 1.1rem; color: var(--gray);">
+                                Nenhuma transação processada.
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                transactionCount.textContent = "0";
+                batchEditPanel.style.display = 'none';
+                selectedTransactions.clear();
+                return;
+            }
+            
+            let tableHTML = '';
+            
+            transactions.forEach((trans, index) => {
+                const amountFormatted = trans.amount.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+                
+                const amountCell = `<span style="font-weight: 600; color: ${trans.amount >= 0 ? 'var(--success)' : 'var(--danger)'}">${amountFormatted}</span>`;
+                
+                const debitCell = trans.debitCode ? 
+                    `<span class="account-code account-debit">${trans.debitCode}</span>` : '';
+                const creditCell = trans.creditCode ? 
+                    `<span class="account-code account-credit">${trans.creditCode}</span>` : '';
+                
+                const isSelected = selectedTransactions.has(trans.id);
+                
+                tableHTML += `
+                    <tr data-id="${trans.id}" ${isSelected ? 'style="background-color: var(--primary-light);"' : ''}>
+                        <td>
+                            <input type="checkbox" class="transaction-checkbox" ${isSelected ? 'checked' : ''} 
+                                onchange="toggleTransactionSelection('${trans.id}', this.checked)">
+                        </td>
+                        <td>${trans.date}</td>
+                        <td>${debitCell}</td>
+                        <td>${creditCell}</td>
+                        <td>${amountCell}</td>
+                        <td>${defaultHistory}</td>
+                        <td></td>
+                        <td>
+                            <div style="position: relative;">
+                                <span class="editable" onclick="editTransactionComplement(${index})">${trans.description}</span>
+                                ${trans.description !== trans.originalDescription ? 
+                                    `<div style="font-size: 0.7rem; color: var(--gray); font-style: italic; margin-top: 2px;">
+                                        Original: ${trans.originalDescription}
+                                    </div>` : ''}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-5">
+                                <button class="btn btn-sm btn-outline" onclick="editTransaction(${index})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteTransaction(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            transactionsTableBody.innerHTML = tableHTML;
+            transactionCount.textContent = transactions.length.toString();
+            
+            // Atualizar painel de edição em lote
+            updateBatchEditPanel();
+        }
+        
+        // Editar complemento da transação
+        function editTransactionComplement(index) {
+            const newComplement = prompt("Editar complemento:", transactions[index].description);
+            if (newComplement !== null) {
+                transactions[index].description = newComplement;
+                displayTransactions();
+                saveToLocalStorage();
+                showStatus("Complemento editado com sucesso.", "success");
+            }
+        }
+        
+        // Editar transação
+        function editTransaction(index) {
+            const trans = transactions[index];
+            
+            const debitCode = prompt("Código de débito:", trans.debitCode);
+            const creditCode = prompt("Código de crédito:", trans.creditCode);
+            const complement = prompt("Complemento:", trans.description);
+            
+            if (debitCode !== null) trans.debitCode = debitCode;
+            if (creditCode !== null) trans.creditCode = creditCode;
+            if (complement !== null) trans.description = complement;
+            
+            displayTransactions();
+            saveToLocalStorage();
+            showStatus("Transação editada com sucesso.", "success");
+        }
+        
+        // Excluir transação
+        function deleteTransaction(index) {
+            if (confirm("Tem certeza que deseja excluir esta transação?")) {
+                const id = transactions[index].id;
+                selectedTransactions.delete(id);
+                transactions.splice(index, 1);
+                displayTransactions();
+                updateFinancialSummary();
+                saveToLocalStorage();
+                showStatus("Transação excluída com sucesso.", "success");
+            }
+        }
+        
+        // Alternar seleção de transação
+        function toggleTransactionSelection(id, checked) {
+            if (checked) {
+                selectedTransactions.add(id);
+            } else {
+                selectedTransactions.delete(id);
+            }
+            updateBatchEditPanel();
+        }
+        
+        // Selecionar todas as transações
+        function selectAllTransactions() {
+            const checkboxes = document.querySelectorAll('.transaction-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+                const id = cb.closest('tr').getAttribute('data-id');
+                if (!allChecked) {
+                    selectedTransactions.add(id);
+                } else {
+                    selectedTransactions.delete(id);
+                }
+            });
+            
+            selectAllCheckbox.checked = !allChecked;
+            updateBatchEditPanel();
+        }
+        
+        // Alternar seleção de todas
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.transaction-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+                const id = cb.closest('tr').getAttribute('data-id');
+                if (checkbox.checked) {
+                    selectedTransactions.add(id);
+                } else {
+                    selectedTransactions.delete(id);
+                }
+            });
+            updateBatchEditPanel();
+        }
+        
+        // Desmarcar todas as transações
+        function deselectAllTransactions() {
+            selectedTransactions.clear();
+            const checkboxes = document.querySelectorAll('.transaction-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            selectAllCheckbox.checked = false;
+            updateBatchEditPanel();
+        }
+        
+        // Atualizar painel de edição em lote
+        function updateBatchEditPanel() {
+            const count = selectedTransactions.size;
+            selectedCount.textContent = count;
+            
+            if (count > 0) {
+                batchEditPanel.style.display = 'flex';
+            } else {
+                batchEditPanel.style.display = 'none';
+            }
+        }
+        
+        // Excluir transações selecionadas
+        function deleteSelectedTransactions() {
+            const count = selectedTransactions.size;
+            if (count === 0) return;
+            
+            if (confirm(`Tem certeza que deseja excluir ${count} transação${count > 1 ? 's' : ''}?`)) {
+                transactions = transactions.filter(trans => !selectedTransactions.has(trans.id));
+                selectedTransactions.clear();
+                displayTransactions();
+                updateFinancialSummary();
+                saveToLocalStorage();
+                showStatus(`${count} transação${count > 1 ? 's' : ''} excluída${count > 1 ? 's' : ''} com sucesso.`, "success");
+            }
+        }
+        
+        // Mostrar modal de edição em lote
+        function showBatchEditModal() {
+            batchEditModal.style.display = 'flex';
+        }
+        
+        function closeBatchEditModal() {
+            batchEditModal.style.display = 'none';
+        }
+        
+        // Aplicar edição em lote
+        function applyBatchEdit() {
+            const field = document.getElementById('batchEditField').value;
+            const value = document.getElementById('batchEditValue').value;
+            const action = document.getElementById('batchEditAction').value;
+            
+            if (!value && action !== 'replace') {
+                alert("Por favor, digite um valor.");
+                return;
+            }
+            
+            let modifiedCount = 0;
+            
+            transactions.forEach(trans => {
+                if (selectedTransactions.has(trans.id)) {
+                    if (field === 'debit') {
+                        if (action === 'replace') {
+                            trans.debitCode = value;
+                        } else if (action === 'add_prefix') {
+                            trans.debitCode = value + trans.debitCode;
+                        }
+                    } else if (field === 'credit') {
+                        if (action === 'replace') {
+                            trans.creditCode = value;
+                        } else if (action === 'add_prefix') {
+                            trans.creditCode = value + trans.creditCode;
+                        }
+                    } else if (field === 'history') {
+                        // Atualizar histórico padrão
+                        defaultHistory = value;
+                        defaultHistoryInput.value = value;
+                    } else if (field === 'complement') {
+                        if (action === 'replace') {
+                            trans.description = value;
+                        } else if (action === 'add_prefix') {
+                            trans.description = value + " " + trans.description;
+                        } else if (action === 'add_suffix') {
+                            trans.description = trans.description + " " + value;
+                        }
+                    }
+                    modifiedCount++;
+                }
+            });
+            
+            closeBatchEditModal();
+            displayTransactions();
+            saveToLocalStorage();
+            showStatus(`${modifiedCount} transação${modifiedCount > 1 ? 's' : ''} editada${modifiedCount > 1 ? 's' : ''} com sucesso.`, "success");
+        }
+        
+        // Mostrar modal de filtro avançado
+        function showAdvancedFilterModal() {
+            advancedFilterModal.style.display = 'flex';
+        }
+        
+        function closeAdvancedFilterModal() {
+            advancedFilterModal.style.display = 'none';
+        }
+        
+        // Aplicar filtro avançado
+        function applyAdvancedFilter() {
+            const complement = document.getElementById('filterComplement').value.toLowerCase();
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            const valueMin = parseFloat(document.getElementById('filterValueMin').value) || -Infinity;
+            const valueMax = parseFloat(document.getElementById('filterValueMax').value) || Infinity;
+            const type = document.getElementById('filterType').value;
+            
+            let filteredCount = 0;
+            selectedTransactions.clear();
+            
+            transactions.forEach(trans => {
+                let match = true;
+                
+                // Filtrar por complemento
+                if (complement && !trans.description.toLowerCase().includes(complement)) {
+                    match = false;
+                }
+                
+                // Filtrar por data
+                if (dateFrom) {
+                    const transDate = new Date(trans.date.split('/').reverse().join('-'));
+                    const fromDate = new Date(dateFrom);
+                    if (transDate < fromDate) match = false;
+                }
+                
+                if (dateTo) {
+                    const transDate = new Date(trans.date.split('/').reverse().join('-'));
+                    const toDate = new Date(dateTo);
+                    if (transDate > toDate) match = false;
+                }
+                
+                // Filtrar por valor
+                if (trans.amount < valueMin || trans.amount > valueMax) {
+                    match = false;
+                }
+                
+                // Filtrar por tipo
+                if (type !== 'all') {
+                    if (type === 'credit' && trans.amount < 0) match = false;
+                    if (type === 'debit' && trans.amount >= 0) match = false;
+                }
+                
+                if (match) {
+                    selectedTransactions.add(trans.id);
+                    filteredCount++;
+                }
+            });
+            
+            closeAdvancedFilterModal();
+            displayTransactions();
+            
+            if (filteredCount > 0) {
+                showStatus(`${filteredCount} transação${filteredCount > 1 ? 's' : ''} encontrada${filteredCount > 1 ? 's' : ''} com o filtro.`, "success");
+            } else {
+                showStatus("Nenhuma transação encontrada com os critérios especificados.", "warning");
+            }
+        }
+        
+        // Filtrar transações por texto
+        function filterTransactions() {
+            const searchText = document.getElementById('transactionSearch').value.toLowerCase();
+            
+            if (!searchText) {
+                // Mostrar todas as transações
+                document.querySelectorAll('#transactionsTableBody tr').forEach(row => {
+                    row.style.display = '';
+                });
+                return;
+            }
+            
+            let visibleCount = 0;
+            
+            document.querySelectorAll('#transactionsTableBody tr').forEach(row => {
+                const complementCell = row.cells[7];
+                if (complementCell) {
+                    const text = complementCell.textContent.toLowerCase();
+                    if (text.includes(searchText)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+            
+            if (visibleCount === 0) {
+                showStatus("Nenhuma transação encontrada com o termo pesquisado.", "warning");
+            }
+        }
+        
+        // Limpar filtro
+        function clearTransactionFilter() {
+            document.getElementById('transactionSearch').value = '';
+            filterTransactions();
+        }
+        
+        // Atualizar resumo financeiro
+        function updateFinancialSummary() {
+            finalBalance = (previousBalance + totalCredits) - totalDebits;
+            
+            summaryPreviousBalance.textContent = formatCurrency(previousBalance);
+            summaryTotalCredits.textContent = formatCurrency(totalCredits);
+            summaryTotalDebits.textContent = formatCurrency(totalDebits);
+            summaryFinalBalance.textContent = formatCurrency(finalBalance);
+            
+            calcPreviousBalance.textContent = formatCurrency(previousBalance);
+            calcCredits.textContent = formatCurrency(totalCredits);
+            calcDebits.textContent = formatCurrency(totalDebits);
+            calcSubtotal.textContent = formatCurrency(previousBalance + totalCredits);
+            calcFinalBalance.textContent = formatCurrency(finalBalance);
+            
+            summaryTotalCredits.className = "summary-value positive";
+            summaryTotalDebits.className = "summary-value negative";
+            summaryFinalBalance.className = finalBalance >= 0 ? "summary-value positive" : "summary-value negative";
+        }
+        
+        // Formatar moeda
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+        }
+        
+        // Funções dos modais de complemento (mantidas do código anterior)
+        function showComplementModal() {
+            complementModal.style.display = 'flex';
+        }
+        
+        function closeComplementModal() {
+            complementModal.style.display = 'none';
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('newComplement').value = '';
+            document.getElementById('replaceType').value = 'replace';
+        }
+        
+        function showDebitCreditComplementModal() {
+            debitCreditComplementModal.style.display = 'flex';
+        }
+        
+        function closeDebitCreditComplementModal() {
+            debitCreditComplementModal.style.display = 'none';
+            document.getElementById('searchCode').value = '';
+            document.getElementById('newComplementCode').value = '';
+            document.getElementById('codeType').value = 'both';
+            document.getElementById('complementAction').value = 'replace';
+        }
+        
+        function applyComplementChange() {
+            const searchKeyword = document.getElementById('searchKeyword').value.trim();
+            const newComplement = document.getElementById('newComplement').value.trim();
+            const replaceType = document.getElementById('replaceType').value;
+            
+            if (!searchKeyword || !newComplement) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+            
+            if (transactions.length === 0) {
+                alert("Não há transações para modificar.");
+                return;
+            }
+            
+            let modifiedCount = 0;
+            const searchUpper = searchKeyword.toUpperCase();
+            
+            transactions.forEach(transaction => {
+                const descUpper = transaction.description.toUpperCase();
+                
+                if (descUpper.includes(searchUpper)) {
+                    if (replaceType === 'replace') {
+                        transaction.description = newComplement;
+                    } else if (replaceType === 'add_beginning') {
+                        if (!transaction.description.startsWith(newComplement)) {
+                            transaction.description = newComplement + " " + transaction.description;
+                        }
+                    } else if (replaceType === 'add_end') {
+                        if (!transaction.description.endsWith(newComplement)) {
+                            transaction.description = transaction.description + " " + newComplement;
+                        }
+                    }
+                    modifiedCount++;
+                }
+            });
+            
+            closeComplementModal();
+            displayTransactions();
+            saveToLocalStorage();
+            showStatus(`${modifiedCount} transações modificadas com sucesso.`, "success");
+        }
+        
+        function applyDebitCreditComplementChange() {
+            const searchCode = document.getElementById('searchCode').value.trim();
+            const newComplement = document.getElementById('newComplementCode').value.trim();
+            const codeType = document.getElementById('codeType').value;
+            const complementAction = document.getElementById('complementAction').value;
+            
+            if (!newComplement) {
+                alert("Por favor, informe o novo complemento.");
+                return;
+            }
+            
+            if (transactions.length === 0) {
+                alert("Não há transações para modificar.");
+                return;
+            }
+            
+            let modifiedCount = 0;
+            
+            transactions.forEach(transaction => {
+                let match = false;
+                
+                if (!searchCode) {
+                    match = true;
+                } else {
+                    if (codeType === 'both') {
+                        match = (transaction.debitCode === searchCode || transaction.creditCode === searchCode);
+                    } else if (codeType === 'debit') {
+                        match = (transaction.debitCode === searchCode);
+                    } else if (codeType === 'credit') {
+                        match = (transaction.creditCode === searchCode);
+                    }
+                }
+                
+                if (match) {
+                    if (complementAction === 'replace') {
+                        transaction.description = newComplement;
+                    } else if (complementAction === 'add_beginning') {
+                        if (!transaction.description.startsWith(newComplement)) {
+                            transaction.description = newComplement + " " + transaction.description;
+                        }
+                    } else if (complementAction === 'add_end') {
+                        if (!transaction.description.endsWith(newComplement)) {
+                            transaction.description = transaction.description + " " + newComplement;
+                        }
+                    }
+                    modifiedCount++;
+                }
+            });
+            
+            closeDebitCreditComplementModal();
+            displayTransactions();
+            saveToLocalStorage();
+            showStatus(`${modifiedCount} transações modificadas com sucesso.`, "success");
+        }
+        
+        // Aplicar complemento automático
+        function applyAutoComplement() {
+            if (transactions.length === 0) {
+                showStatus("Não há transações para aplicar complemento.", "error");
+                return;
+            }
+            
+            let modifiedCount = 0;
+            
+            transactions.forEach(transaction => {
+                const originalDesc = transaction.description;
+                applyAutoComplementLogic(transaction);
+                if (originalDesc !== transaction.description) {
+                    modifiedCount++;
+                }
+            });
+            
+            displayTransactions();
+            saveToLocalStorage();
+            showStatus(`Complemento automático aplicado em ${modifiedCount} transações.`, "success");
+        }
+        
+        // Aplicar regras às transações
+        function applyRulesToTransactions() {
+            if (rawTransactions.length === 0) {
+                showStatus("Não há transações para aplicar regras.", "error");
+                return;
+            }
+            
+            processTransactionsWithRules();
+            displayTransactions();
+            updateFinancialSummary();
+            saveToLocalStorage();
+            
+            showStatus(`Regras aplicadas a ${transactions.length} transações.`, "success");
+        }
+        
+        // Mostrar modal de estrutura de arquivos
+        function showFileStructureModal() {
+            fileStructureModal.style.display = 'flex';
+        }
+        
+        function closeFileStructureModal() {
+            fileStructureModal.style.display = 'none';
+        }
+        
+        // Salvar estrutura de arquivos
+        function saveFileStructure() {
+            const configName = document.getElementById('csvConfigName').value || 
+                              document.getElementById('excelConfigName').value;
+            
+            if (!configName) {
+                alert("Por favor, digite um nome para a configuração.");
+                return;
+            }
+            
+            const activeTab = document.querySelector('#fileStructureModal .tab.active').textContent.toLowerCase();
+            
+            if (activeTab.includes('csv')) {
+                fileStructures[configName] = {
+                    type: 'csv',
+                    dateColumn: document.getElementById('csvDateColumn').value,
+                    dateFormat: document.getElementById('csvDateFormat').value,
+                    descColumn: document.getElementById('csvDescColumn').value,
+                    valueColumn: document.getElementById('csvValueColumn').value,
+                    valueFormat: document.getElementById('csvValueFormat').value,
+                    typeColumn: document.getElementById('csvTypeColumn').value,
+                    typeFormat: document.getElementById('csvTypeFormat').value,
+                    startRow: parseInt(document.getElementById('csvStartRow').value) || 1
+                };
+            } else {
+                fileStructures[configName] = {
+                    type: 'excel',
+                    dateColumn: document.getElementById('excelDateColumn').value,
+                    dateFormat: document.getElementById('excelDateFormat').value,
+                    descColumn: document.getElementById('excelDescColumn').value,
+                    valueColumn: document.getElementById('excelValueColumn').value,
+                    valueFormat: document.getElementById('excelValueFormat').value
+                };
+            }
+            
+            localStorage.setItem('fileStructures', JSON.stringify(fileStructures));
+            closeFileStructureModal();
+            showStatus(`Configuração "${configName}" salva com sucesso.`, "success");
+        }
+        
+        // Exportar para Excel
+        function exportToExcel() {
+            if (transactions.length === 0) {
+                showStatus("Não há transações para exportar.", "error");
+                return;
+            }
+            
+            const data = [
+                ["SIS-C v2.0 - Sistema de Contabilidade Automatizada"],
+                ["Exportação realizada em: " + new Date().toLocaleDateString('pt-BR')],
+                ["Código da Conta Bancária: " + bankAccountCode],
+                [""],
+                ["Data", "Débito", "Crédito", "Valor", "Histórico", "Código", "Documento", "Complemento"]
+            ];
+            
+            transactions.forEach(trans => {
+                data.push([
+                    trans.date,
+                    trans.debitCode,
+                    trans.creditCode,
+                    trans.amount,
+                    defaultHistory,
+                    "",
+                    "",
+                    trans.description
+                ]);
+            });
+            
+            data.push([""]);
+            data.push(["RESUMO FINANCEIRO"]);
+            data.push(["Saldo Anterior:", "", "", previousBalance]);
+            data.push(["Total de Entradas:", "", "", totalCredits]);
+            data.push(["Total de Saídas:", "", "", totalDebits]);
+            data.push(["Saldo Final:", "", "", finalBalance]);
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Extrato Contábil");
+            
+            const wscols = [
+                {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 12}, {wch: 40}
+            ];
+            ws['!cols'] = wscols;
+            
+            const fileName = `SIS-C_Extrato_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            showStatus(`Arquivo "${fileName}" exportado com sucesso!`, "success");
+        }
+        
+        // Exportar para TXT
+        function exportToTxt() {
+            if (transactions.length === 0) {
+                showStatus("Não há transações para exportar.", "error");
+                return;
+            }
+            
+            let txtContent = "=".repeat(70) + "\n";
+            txtContent += "SIS-C v2.0 - Sistema de Contabilidade Automatizada\n";
+            txtContent += "Extrato Processado - " + new Date().toLocaleDateString('pt-BR') + "\n";
+            txtContent += "Código da Conta Bancária: " + bankAccountCode + "\n";
+            txtContent += "=".repeat(70) + "\n\n";
+            
+            txtContent += "Data".padEnd(12) + "Débito".padEnd(15) + "Crédito".padEnd(15) + "Valor".padEnd(15) + 
+                          "Histórico".padEnd(20) + "Código".padEnd(10) + "Complemento\n";
+            txtContent += "-".repeat(110) + "\n";
+            
+            transactions.forEach(trans => {
+                const amountFormatted = formatCurrency(trans.amount);
+                
+                txtContent += 
+                    trans.date.padEnd(12) +
+                    (trans.debitCode || "").padEnd(15) +
+                    (trans.creditCode || "").padEnd(15) +
+                    amountFormatted.padEnd(15) +
+                    defaultHistory.substring(0, 20).padEnd(20) +
+                    "".padEnd(10) +
+                    trans.description + "\n";
+            });
+            
+            txtContent += "\n" + "=".repeat(70) + "\n";
+            txtContent += "RESUMO FINANCEIRO\n";
+            txtContent += "-".repeat(70) + "\n";
+            txtContent += `Saldo Anterior: ${formatCurrency(previousBalance)}\n`;
+            txtContent += `Total de Entradas: ${formatCurrency(totalCredits)}\n`;
+            txtContent += `Total de Saídas: ${formatCurrency(totalDebits)}\n`;
+            txtContent += `Saldo Final: ${formatCurrency(finalBalance)}\n`;
+            txtContent += "=".repeat(70) + "\n";
+            
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SIS-C_Extrato_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus(`Arquivo "${a.download}" exportado com sucesso!`, "success");
+        }
+        
+        // Funções do plano de contas
+        function renderChartOfAccounts() {
+            const chartTableBody = document.getElementById('chartTableBody');
+            chartTableBody.innerHTML = '';
+            
+            if (chartOfAccounts.length === 0) {
+                chartTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 40px;">
+                            <i class="fas fa-th-list" style="font-size: 3rem; color: var(--border); margin-bottom: 15px;"></i>
+                            <div style="font-size: 1.1rem; color: var(--gray);">
+                                Nenhuma conta cadastrada. Adicione sua primeira conta.
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            chartOfAccounts.forEach((account, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${account.code}</td>
+                    <td>${account.description}</td>
+                    <td>${account.group}</td>
+                    <td>${account.type}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="editAccount(${index})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="removeAccount(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                chartTableBody.appendChild(row);
+            });
+        }
+        
+        function addAccount() {
+            const code = prompt("Digite o código da conta:");
+            if (!code) return;
+            
+            const description = prompt("Digite a descrição da conta:");
+            if (!description) return;
+            
+            const group = prompt("Digite o grupo da conta (Ativo, Passivo, Receita, Despesa):");
+            if (!group) return;
+            
+            chartOfAccounts.push({
+                code: code,
+                description: description,
+                group: group,
+                type: group
+            });
+            
+            localStorage.setItem('chartOfAccounts', JSON.stringify(chartOfAccounts));
+            renderChartOfAccounts();
+            showStatus("Conta adicionada com sucesso.", "success");
+        }
+        
+        function editAccount(index) {
+            const account = chartOfAccounts[index];
+            const newCode = prompt("Editar código:", account.code);
+            const newDescription = prompt("Editar descrição:", account.description);
+            const newGroup = prompt("Editar grupo:", account.group);
+            
+            if (newCode) chartOfAccounts[index].code = newCode;
+            if (newDescription) chartOfAccounts[index].description = newDescription;
+            if (newGroup) {
+                chartOfAccounts[index].group = newGroup;
+                chartOfAccounts[index].type = newGroup;
+            }
+            
+            localStorage.setItem('chartOfAccounts', JSON.stringify(chartOfAccounts));
+            renderChartOfAccounts();
+            showStatus("Conta atualizada com sucesso.", "success");
+        }
+        
+        function removeAccount(index) {
+            if (confirm("Tem certeza que deseja remover esta conta?")) {
+                chartOfAccounts.splice(index, 1);
+                localStorage.setItem('chartOfAccounts', JSON.stringify(chartOfAccounts));
+                renderChartOfAccounts();
+                showStatus("Conta removida com sucesso.", "success");
+            }
+        }
+        
+        function importChartOfAccounts() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json,.csv,.xlsx';
+            
+            fileInput.onchange = function(e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        if (file.name.endsWith('.json')) {
+                            chartOfAccounts = JSON.parse(e.target.result);
+                        } else if (file.name.endsWith('.csv')) {
+                            // Implementar importação CSV
+                            const csv = e.target.result;
+                            // Parse CSV e converter para plano de contas
+                        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                            // Implementar importação Excel
+                        }
+                        
+                        localStorage.setItem('chartOfAccounts', JSON.stringify(chartOfAccounts));
+                        renderChartOfAccounts();
+                        showStatus("Plano de contas importado com sucesso.", "success");
+                    } catch (error) {
+                        showStatus("Erro ao importar plano de contas: " + error.message, "error");
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            fileInput.click();
+        }
+        
+        // Mostrar modal de relatório
+        function showReportModal() {
+            if (transactions.length === 0) {
+                showStatus("Não há transações para gerar relatório.", "error");
+                return;
+            }
+            
+            const reportContent = document.getElementById('reportContent');
+            
+            // Calcular estatísticas
+            const totalTransactions = transactions.length;
+            const creditCount = transactions.filter(t => t.amount >= 0).length;
+            const debitCount = transactions.filter(t => t.amount < 0).length;
+            
+            // Agrupar por código de débito
+            const debitGroups = {};
+            transactions.forEach(t => {
+                if (t.debitCode && t.debitCode !== bankAccountCode) {
+                    if (!debitGroups[t.debitCode]) {
+                        debitGroups[t.debitCode] = {
+                            count: 0,
+                            total: 0,
+                            description: getAccountDescription(t.debitCode)
+                        };
+                    }
+                    debitGroups[t.debitCode].count++;
+                    debitGroups[t.debitCode].total += Math.abs(t.amount);
+                }
+            });
+            
+            // Agrupar por código de crédito
+            const creditGroups = {};
+            transactions.forEach(t => {
+                if (t.creditCode && t.creditCode !== bankAccountCode) {
+                    if (!creditGroups[t.creditCode]) {
+                        creditGroups[t.creditCode] = {
+                            count: 0,
+                            total: 0,
+                            description: getAccountDescription(t.creditCode)
+                        };
+                    }
+                    creditGroups[t.creditCode].count++;
+                    creditGroups[t.creditCode].total += Math.abs(t.amount);
+                }
+            });
+            
+            let reportHTML = `
+                <h3 style="color: var(--primary); margin-bottom: 20px;">Relatório Financeiro</h3>
+                
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: var(--dark); margin-bottom: 10px;">Estatísticas Gerais</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--primary);">Total de Transações</div>
+                            <div style="font-size: 1.5rem; font-weight: 700;">${totalTransactions}</div>
+                        </div>
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--success);">Entradas</div>
+                            <div style="font-size: 1.5rem; font-weight: 700;">${creditCount}</div>
+                            <div style="font-size: 0.9rem; color: var(--gray);">${formatCurrency(totalCredits)}</div>
+                        </div>
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--danger);">Saídas</div>
+                            <div style="font-size: 1.5rem; font-weight: 700;">${debitCount}</div>
+                            <div style="font-size: 0.9rem; color: var(--gray);">${formatCurrency(totalDebits)}</div>
+                        </div>
+                        <div style="background-color: var(--light); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="font-weight: 600; color: var(--secondary);">Saldo Final</div>
+                            <div style="font-size: 1.5rem; font-weight: 700;">${formatCurrency(finalBalance)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Adicionar grupos de débito
+            if (Object.keys(debitGroups).length > 0) {
+                reportHTML += `
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--dark); margin-bottom: 10px;">Despesas por Conta</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: var(--primary); color: white;">
+                                    <th style="padding: 10px; text-align: left;">Código</th>
+                                    <th style="padding: 10px; text-align: left;">Descrição</th>
+                                    <th style="padding: 10px; text-align: right;">Quantidade</th>
+                                    <th style="padding: 10px; text-align: right;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                let debitTotal = 0;
+                for (const [code, data] of Object.entries(debitGroups)) {
+                    debitTotal += data.total;
+                    reportHTML += `
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 10px;">${code}</td>
+                            <td style="padding: 10px;">${data.description || ''}</td>
+                            <td style="padding: 10px; text-align: right;">${data.count}</td>
+                            <td style="padding: 10px; text-align: right; color: var(--danger); font-weight: 600;">
+                                ${formatCurrency(data.total)}
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                reportHTML += `
+                            </tbody>
+                            <tfoot>
+                                <tr style="background-color: var(--light); font-weight: 600;">
+                                    <td colspan="3" style="padding: 10px; text-align: right;">Total de Despesas:</td>
+                                    <td style="padding: 10px; text-align: right; color: var(--danger);">
+                                        ${formatCurrency(debitTotal)}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Adicionar grupos de crédito
+            if (Object.keys(creditGroups).length > 0) {
+                reportHTML += `
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--dark); margin-bottom: 10px;">Receitas por Conta</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: var(--primary); color: white;">
+                                    <th style="padding: 10px; text-align: left;">Código</th>
+                                    <th style="padding: 10px; text-align: left;">Descrição</th>
+                                    <th style="padding: 10px; text-align: right;">Quantidade</th>
+                                    <th style="padding: 10px; text-align: right;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                let creditTotal = 0;
+                for (const [code, data] of Object.entries(creditGroups)) {
+                    creditTotal += data.total;
+                    reportHTML += `
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 10px;">${code}</td>
+                            <td style="padding: 10px;">${data.description || ''}</td>
+                            <td style="padding: 10px; text-align: right;">${data.count}</td>
+                            <td style="padding: 10px; text-align: right; color: var(--success); font-weight: 600;">
+                                ${formatCurrency(data.total)}
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                reportHTML += `
+                            </tbody>
+                            <tfoot>
+                                <tr style="background-color: var(--light); font-weight: 600;">
+                                    <td colspan="3" style="padding: 10px; text-align: right;">Total de Receitas:</td>
+                                    <td style="padding: 10px; text-align: right; color: var(--success);">
+                                        ${formatCurrency(creditTotal)}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            reportContent.innerHTML = reportHTML;
+            reportModal.style.display = 'flex';
+        }
+        
+        function closeReportModal() {
+            reportModal.style.display = 'none';
+        }
+        
+        function exportReport() {
+            const reportText = document.getElementById('reportContent').textContent;
+            const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SIS-C_Relatorio_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus("Relatório exportado com sucesso!", "success");
+        }
+        
+        function getAccountDescription(code) {
+            const account = chartOfAccounts.find(acc => acc.code === code);
+            return account ? account.description : '';
+        }
+        
+        // Salvar configurações
+        function saveSettings() {
+            const settings = {
+                bankAccountCode: bankAccountCode,
+                defaultHistory: defaultHistory,
+                previousBalance: previousBalance,
+                numberFormat: document.getElementById('numberFormat').value,
+                dateFormat: document.getElementById('dateFormat').value,
+                exportFormat: document.getElementById('exportFormat').value,
+                autoSave: document.getElementById('autoSave').value
+            };
+            
+            localStorage.setItem('settings', JSON.stringify(settings));
+            showStatus("Configurações salvas com sucesso.", "success");
+        }
+        
+        // Salvar dados no localStorage
+        function saveToLocalStorage() {
+            const data = {
+                transactions: transactions,
+                rawTransactions: rawTransactions,
+                totalCredits: totalCredits,
+                totalDebits: totalDebits
+            };
+            
+            localStorage.setItem('transactions', JSON.stringify(data));
+        }
+        
+        // Iniciar auto-save
+        function startAutoSave() {
+            const autoSave = document.getElementById('autoSave').value;
+            
+            if (autoSave === 'enabled') {
+                setInterval(() => {
+                    if (transactions.length > 0) {
+                        saveToLocalStorage();
+                    }
+                }, 30000); // Salvar a cada 30 segundos
+            }
+        }
+        
+        // Limpar tudo
+        function clearAll() {
+            if (confirm("Tem certeza que deseja limpar todas as transações? Esta ação não pode ser desfeita.")) {
+                transactions = [];
+                rawTransactions = [];
+                totalCredits = 0;
+                totalDebits = 0;
+                finalBalance = previousBalance;
+                selectedTransactions.clear();
+                
+                displayTransactions();
+                updateFinancialSummary();
+                
+                exportExcelBtn.disabled = true;
+                exportTxtBtn.disabled = true;
+                exportExcelBtn2.disabled = true;
+                exportTxtBtn2.disabled = true;
+                applyRulesBtn.disabled = true;
+                applyRulesBtn2.disabled = true;
+                
+                transactionsBadge.classList.add('d-none');
+                
+                localStorage.removeItem('transactions');
+                showStatus("Todas as transações foram removidas.", "success");
+            }
+        }
+        
+        // Funções auxiliares
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showHelpModal() {
+            helpModal.style.display = 'flex';
+        }
+        
+        function closeHelpModal() {
+            helpModal.style.display = 'none';
+        }
+        
+        function sendHelpRequest() {
+            const name = document.getElementById('helpName').value;
+            const subject = document.getElementById('helpSubject').value;
+            const message = document.getElementById('helpMessage').value;
+            
+            if (!name || !subject || !message) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+            
+            // Em um sistema real, aqui enviaria para um servidor
+            alert(`Mensagem enviada!\n\nNome: ${name}\nAssunto: ${subject}\nMensagem: ${message}`);
+            closeHelpModal();
+            
+            showStatus("Sua mensagem foi enviada para o suporte.", "success");
+        }
+    </script>
+</body>
+</html>
